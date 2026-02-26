@@ -5,6 +5,7 @@ import { mongodbAdapter } from "better-auth/adapters/mongodb";
 
 export const auth = betterAuth({
     database: mongodbAdapter(db),
+    trustedOrigins: [config.frontend_url],
     emailAndPassword: { enabled: false },
     socialProviders: {
         github: {

@@ -8,14 +8,15 @@ import { auth } from "./lib/auth.js";
 const app = express();
 app.use(express.json());
 app.use(cors({
-    origin: config.better_auth_url,
+    origin: config.frontend_url,
+    credentials: true,
 }));
 
 app.get("/", (req, res) => {
     res.send("Hello world!");
 });
 
-app.all("/api/auth/*", toNodeHandler(auth));
+app.use("/api/auth", toNodeHandler(auth));
 
 app.listen(config.port, async () => {
     await connectDB();
