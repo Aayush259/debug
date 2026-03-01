@@ -43,6 +43,54 @@ export const generateSecretKey = async (req: Request, res: Response) => {
     }
 }
 
+export const updateSecretKey = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { projectName, image } = req.body;
+        const user = req.user;
+
+        if (!user) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        if (!id) {
+            return res.status(400).json({ error: "Secret key ID is required" });
+        }
+
+        const secretKey = await SecretKey.findOne({ _id: id, user: user.id });
+
+        if (!secretKey) {
+            return res.status(404).json({ error: "Secret key not found" });
+        }
+
+        if (projectName) {
+            secretKey.projectName = projectName;
+        }
+
+        if (image) {
+            secretKey.image = image;
+        }
+
+        await secretKey.save();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Secret key updated successfully",
+            data: {
+                projectName: secretKey.projectName,
+                image: secretKey.image,
+                user: secretKey.user,
+                createdAt: secretKey.createdAt,
+                updatedAt: secretKey.updatedAt,
+                _id: secretKey._id
+            }
+        });
+    } catch (error) {
+        console.error("Error updating secret key:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
 export const getAllSecretKeys = async (req: Request, res: Response) => {
     try {
         const user = req.user;
