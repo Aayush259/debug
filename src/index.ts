@@ -11,13 +11,7 @@ import secretKeyRoutes from "./routes/secretKeyRoutes.js";
 import { requireAuth } from "./middleware/authMiddleware.js";
 import projectLogsRoutes from "./routes/projectLogsRoutes.js";
 import { saveProjectLogs } from "./controllers/projectLogsControllers.js";
-
-type SessionType = typeof auth.$Infer.Session;
-
-interface SocketData {
-    user?: SessionType["user"];
-    session?: SessionType["session"];
-}
+import { setupSocketHandlers, SocketData } from "./socket/index.js";
 
 const app = express();
 const server = createServer(app);
@@ -36,6 +30,7 @@ app.use(cors({
     credentials: true,
 }));
 
+app.set("io", io);
 
 app.get("/", (req, res) => {
     res.send("Hello world!");
@@ -80,13 +75,7 @@ io.use(async (socket, next) => {
     }
 });
 
-io.on(EVENTS.CONNECTION, (socket: Socket<any, any, any, SocketData>) => {
-    console.log("User connected", socket.id, "User ID:", socket.data.user?.id);
-
-    socket.on(EVENTS.DISCONNECT, () => {
-        console.log("User disconnected", socket.id);
-    });
-});
+setupSocketHandlers(io);
 
 server.listen(config.port, async () => {
     await connectDB();

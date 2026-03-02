@@ -1,6 +1,48 @@
 import { Request, Response } from "express";
 import { ProjectLogs } from "../models/projectLogsModel";
 import { SecretKey } from "../models/secretKeyModel";
+import { EVENTS } from "../lib/utils.js";
+
+export const getProjectLogs = async (req: Request, res: Response) => {
+    try {
+        const { projectId } = req.params;
+        const user = req.user;
+
+        if (!projectId) {
+            return res.status(400).json({ status: "error", message: "Project ID is required" });
+        }
+
+        if (!user) {
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
+
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 50;
+        const skip = (page - 1) * limit;
+
+        // Query filtering by both secretKeyId and user to ensure ownership and avoid 403 errors on empty results
+        const filter = { secretKeyId: projectId, user: user.id };
+
+        const totalLogs = await ProjectLogs.countDocuments(filter);
+        const logs = await ProjectLogs.find(filter)
+            .sort({ _id: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        const hasMore = totalLogs > skip + logs.length;
+
+        return res.status(200).json({
+            status: "success",
+            message: "Project logs fetched successfully",
+            data: logs,
+            totalLogs,
+            hasMore
+        });
+    } catch (error) {
+        console.error("Error fetching project logs:", error);
+        return res.status(500).json({ status: "error", message: "Internal server error" });
+    }
+}
 
 export const getLogDetails = async (req: Request, res: Response) => {
     try {
@@ -61,11 +103,17 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
             return res.status(401).json({ status: "error", message: "Invalid secret key" });
         }
 
-        await ProjectLogs.insertMany(logs.map((log: any) => ({
+        const savedLogs = await ProjectLogs.insertMany(logs.map((log: any) => ({
             log,
             secretKeyId: keyId,
             user: secretKey.user
         })));
+
+        // Send logs via Socket.IO
+        const io = req.app.get("io");
+        if (io) {
+            io.to(secretKey.user.toString()).emit(EVENTS.GET_LOGS, savedLogs);
+        }
 
         return res.status(201).json({
             status: "success",
