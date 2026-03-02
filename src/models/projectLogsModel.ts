@@ -15,6 +15,10 @@ const projectLogsSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
+    isError: {
+        type: Boolean,
+        default: false
+    }
 }, { timestamps: true });
 
 export const ProjectLogs = mongoose.models.ProjectLogs || mongoose.model("ProjectLogs", projectLogsSchema, "projectLogs");
