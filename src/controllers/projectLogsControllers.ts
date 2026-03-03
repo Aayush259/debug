@@ -3,6 +3,12 @@ import { ProjectLogs } from "../models/projectLogsModel";
 import { SecretKey } from "../models/secretKeyModel";
 import { EVENTS } from "../lib/utils.js";
 
+/**
+ * Retrieves all logs for a specific project.
+ * @param req - Express request object
+ * @param res - Express response object
+ * @returns JSON response with all logs for the project
+ */
 export const getProjectLogs = async (req: Request, res: Response) => {
     try {
         const { projectId } = req.params;
@@ -44,6 +50,12 @@ export const getProjectLogs = async (req: Request, res: Response) => {
     }
 }
 
+/**
+ * Retrieves a specific log by ID.
+ * @param req - Express request object
+ * @param res - Express response object
+ * @returns JSON response with the log details
+ */
 export const getLogDetails = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -74,6 +86,12 @@ export const getLogDetails = async (req: Request, res: Response) => {
     }
 }
 
+/**
+ * Saves multiple logs for a specific project (By the external application).
+ * @param req - Express request object
+ * @param res - Express response object
+ * @returns JSON response with the saved logs
+ */
 export const saveProjectLogs = async (req: Request, res: Response) => {
     try {
         const { keyId } = req.params;

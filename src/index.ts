@@ -1,17 +1,17 @@
 import cors from "cors";
 import express from "express";
+import { Server } from "socket.io";
 import { auth } from "./lib/auth.js";
-import { EVENTS } from "./lib/utils.js";
 import config from "./config/config.js";
 import { createServer } from "node:http";
-import { Server, Socket } from "socket.io";
 import { connectDB } from "./lib/database.js";
 import { toNodeHandler } from "better-auth/node";
 import secretKeyRoutes from "./routes/secretKeyRoutes.js";
 import { requireAuth } from "./middleware/authMiddleware.js";
 import projectLogsRoutes from "./routes/projectLogsRoutes.js";
-import { saveProjectLogs } from "./controllers/projectLogsControllers.js";
+import userSettingsRoutes from "./routes/userSettingsRoutes.js";
 import { setupSocketHandlers, SocketData } from "./socket/index.js";
+import { saveProjectLogs } from "./controllers/projectLogsControllers.js";
 
 const app = express();
 const server = createServer(app);
@@ -42,6 +42,7 @@ app.use("/api/auth", toNodeHandler(auth));
 app.use(express.json());    // Parse JSON request bodies middleware
 app.use("/api/secret-key", requireAuth, secretKeyRoutes);  // Secret key routes
 app.use("/api/project-logs", requireAuth, projectLogsRoutes);  // Project logs routes
+app.use("/api/user-settings", requireAuth, userSettingsRoutes);  // User settings routes
 
 app.post("/api/logs/:keyId", saveProjectLogs);  // Save project logs (for client's project to send logs)
 
