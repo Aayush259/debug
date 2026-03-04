@@ -19,9 +19,10 @@ const projectLogsSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
-    isError: {
-        type: Boolean,
-        default: false
+    level: {
+        type: String,
+        enum: ["info", "warn", "error"],
+        default: "info"
     }
 }, { timestamps: true });
 

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { ProjectLogs } from "../models/projectLogsModel";
 import { SecretKey } from "../models/secretKeyModel";
 import { EVENTS } from "../lib/utils.js";
+import { classifyLog } from "../lib/logClassifier.js";
 
 /**
  * Retrieves all logs for a specific project.
@@ -121,11 +122,52 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
             return res.status(401).json({ status: "error", message: "Invalid secret key" });
         }
 
-        const savedLogs = await ProjectLogs.insertMany(logs.map((log: any) => ({
-            log,
-            secretKeyId: keyId,
-            user: secretKey.user
-        })));
+        // Process incoming logs
+        const processedLogs = logs.map((logItem: any) => {
+            let processedLog = {
+                log: "",
+                level: "info",
+                secretKeyId: keyId,
+                user: secretKey.user,
+                // Automatically take the client's timestamp if provided, else rely on Mongoose timestamps
+                timestamp: undefined
+            };
+
+            // If the incoming log is a string, classify it
+            if (typeof logItem === "string") {
+                processedLog.log = logItem;
+                processedLog.level = classifyLog(logItem);
+            }
+            // If the incoming log is an object (structured data)
+            else if (typeof logItem === "object" && logItem !== null) {
+                // Ensure there is at least a log string
+                processedLog.log = logItem.log ? String(logItem.log) : JSON.stringify(logItem);
+
+                // Allow overriding level, but validate it
+                if (logItem.level && ["info", "warn", "error"].includes(logItem.level.toLowerCase())) {
+                    processedLog.level = logItem.level.toLowerCase();
+                } else {
+                    // Fall back to auto-classification if object contains unstructured string but no explicit level
+                    processedLog.level = classifyLog(processedLog.log);
+                }
+
+                if (logItem.timestamp) {
+                    const parsedDate = new Date(logItem.timestamp);
+                    if (!isNaN(parsedDate.getTime())) {
+                        processedLog.timestamp = parsedDate as any;
+                    }
+                }
+            } else {
+                // Fallback for unexpected primitives
+                processedLog.log = String(logItem);
+                processedLog.level = "info";
+            }
+
+            return processedLog;
+        });
+
+        // Insert into database
+        const savedLogs = await ProjectLogs.insertMany(processedLogs);
 
         // Send logs via Socket.IO
         const io = req.app.get("io");
