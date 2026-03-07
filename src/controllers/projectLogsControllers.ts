@@ -3,6 +3,7 @@ import { ProjectLogs } from "../models/projectLogsModel";
 import { SecretKey } from "../models/secretKeyModel";
 import { EVENTS } from "../lib/utils.js";
 import { classifyLog } from "../lib/logClassifier.js";
+import { enqueueLogForAnalysis } from "../lib/queue/logQueue.js";
 
 /**
  * Retrieves all logs for a specific project.
@@ -122,6 +123,8 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
             return res.status(401).json({ status: "error", message: "Invalid secret key" });
         }
 
+        console.log(`[Ingestion API] Received ${logs.length} logs from project: ${keyId}`);
+
         // Process incoming logs
         const processedLogs = logs.map((logItem: any) => {
             let processedLog = {
@@ -174,6 +177,18 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
         if (io) {
             io.to(secretKey.user.toString()).emit(EVENTS.GET_LOGS, savedLogs);
         }
+
+        // Push errors and warnings to the AI background queue
+        savedLogs.forEach((logItem) => {
+            if (logItem.level === 'error' || logItem.level === 'warn') {
+                console.log(`[Ingestion API] Flagged ${logItem.level} log for AI processing. Triggering queue for ID: ${logItem._id.toString()}`);
+                enqueueLogForAnalysis(
+                    logItem._id.toString(),
+                    logItem.user.toString(),
+                    logItem.log
+                ).catch(err => console.error("[Ingestion API] Failed to enqueue log for AI analysis:", err));
+            }
+        });
 
         return res.status(201).json({
             status: "success",

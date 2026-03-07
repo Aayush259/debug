@@ -11,7 +11,9 @@ import { requireAuth } from "./middleware/authMiddleware.js";
 import projectLogsRoutes from "./routes/projectLogsRoutes.js";
 import userSettingsRoutes from "./routes/userSettingsRoutes.js";
 import { setupSocketHandlers, SocketData } from "./socket/index.js";
+import { setupRedisSubscriber } from "./lib/redisSubscriber.js";
 import { saveProjectLogs } from "./controllers/projectLogsControllers.js";
+import "./lib/workers/logWorker.js"; // Initialize background worker natively
 
 const app = express();
 const server = createServer(app);
@@ -77,6 +79,7 @@ io.use(async (socket, next) => {
 });
 
 setupSocketHandlers(io);
+setupRedisSubscriber(io); // Attach custom AI insight Redis subscriber to Socket
 
 server.listen(config.port, async () => {
     await connectDB();

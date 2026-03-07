@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { UserSettings } from "../models/userSettings.js";
 import { encrypt, decrypt } from "../lib/encryption.js";
 import { z } from "zod";
+import { allModels } from "../lib/ai/modelsRegistry.js";
 
 const updateUserSettingsSchema = z.object({
     modelProvider: z.string().optional(),
@@ -14,26 +15,26 @@ const updateUserSettingsSchema = z.object({
     useFreeQuota: z.boolean().optional()
 });
 
-interface VercelModel {
-    id: string;
-    owned_by: string;
-    name: string;
-}
+// interface VercelModel {
+//     id: string;
+//     owned_by: string;
+//     name: string;
+// }
 
 // Function to fetch models from the Vercel API
-const fetchAvailableModels = async () => {
-    try {
-        const response = await fetch("https://ai-gateway.vercel.sh/v1/models");
-        if (!response.ok) {
-            throw new Error(`Failed to fetch models: ${response.status}`);
-        }
-        const data = await response.json();
-        return (data as any).data as VercelModel[];
-    } catch (error) {
-        console.error("Error fetching models from Vercel:", error);
-        return [];
-    }
-};
+// const fetchAvailableModels = async () => {
+//     try {
+//         const response = await fetch("https://ai-gateway.vercel.sh/v1/models");
+//         if (!response.ok) {
+//             throw new Error(`Failed to fetch models: ${response.status}`);
+//         }
+//         const data = await response.json();
+//         return (data as any).data as VercelModel[];
+//     } catch (error) {
+//         console.error("Error fetching models from Vercel:", error);
+//         return [];
+//     }
+// };
 
 export const getUserSettings = async (req: Request, res: Response) => {
     try {
@@ -56,7 +57,7 @@ export const getUserSettings = async (req: Request, res: Response) => {
             anthropic: decrypt(userSettings.apiKeys?.anthropic || "")
         };
 
-        const models = await fetchAvailableModels();
+        // const models = await fetchAvailableModels();
 
         const resultData = {
             ...userSettings.toObject(),
@@ -67,7 +68,7 @@ export const getUserSettings = async (req: Request, res: Response) => {
             status: "success",
             message: "User settings fetched successfully",
             data: resultData,
-            models
+            models: allModels
         });
     } catch (error) {
         console.error("Error fetching user settings:", error);
@@ -101,10 +102,8 @@ export const updateUserSettings = async (req: Request, res: Response) => {
         const finalModel = model !== undefined ? model : (currentSettings?.model || "gemini-1.5-flash");
         const finalUseFreeQuota = useFreeQuota !== undefined ? useFreeQuota : (currentSettings?.useFreeQuota ?? true);
 
-        let validModels = await fetchAvailableModels();
-        if (validModels.length === 0) {
-            validModels = [{ id: "google/gemini-2.0-flash", owned_by: "google", name: "Gemini 2.0 Flash" }];
-        }
+        // let validModels = await fetchAvailableModels();
+        let validModels = allModels;
 
         const isValidModel = validModels.some(m => m.id === finalModel && m.owned_by === finalModelProvider);
 
