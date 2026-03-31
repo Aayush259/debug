@@ -6,6 +6,11 @@ const logsDebugSchema = new mongoose.Schema({
         ref: "ProjectLogs",
         required: true
     },
+    secretKey: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "SecretKey",
+        required: true
+    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -23,6 +28,11 @@ const logsDebugSchema = new mongoose.Schema({
         type: String,
         enum: ["high", "medium", "low"],
         default: "medium"
+    },
+    status: {
+        type: String,
+        enum: ["pending", "resolved"],
+        default: "pending"
     }
 }, { timestamps: true });
 

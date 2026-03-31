@@ -10,6 +10,7 @@ import secretKeyRoutes from "./routes/secretKeyRoutes.js";
 import { requireAuth } from "./middleware/authMiddleware.js";
 import projectLogsRoutes from "./routes/projectLogsRoutes.js";
 import userSettingsRoutes from "./routes/userSettingsRoutes.js";
+import logsDebugRoutes from "./routes/logsDebugRoutes.js";
 import { setupSocketHandlers, SocketData } from "./socket/index.js";
 import { setupRedisSubscriber } from "./lib/redisSubscriber.js";
 import { saveProjectLogs } from "./controllers/projectLogsControllers.js";
@@ -45,6 +46,7 @@ app.use(express.json());    // Parse JSON request bodies middleware
 app.use("/api/secret-key", requireAuth, secretKeyRoutes);  // Secret key routes
 app.use("/api/project-logs", requireAuth, projectLogsRoutes);  // Project logs routes
 app.use("/api/user-settings", requireAuth, userSettingsRoutes);  // User settings routes
+app.use("/api/ai-insights", requireAuth, logsDebugRoutes);  // AI insights routes
 
 app.post("/api/logs/:keyId", saveProjectLogs);  // Save project logs (for client's project to send logs)
 

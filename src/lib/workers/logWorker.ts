@@ -9,6 +9,7 @@ import { AIProvider } from "../ai/providers.js";
 
 interface ProcessLogJobData {
     projectLogId: string;
+    secretKeyId: string;
     userId: string;
     logContent: string;
 }
@@ -16,7 +17,7 @@ interface ProcessLogJobData {
 export const logWorker = new Worker<ProcessLogJobData>(
     LOG_QUEUE_NAME,
     async (job: Job<ProcessLogJobData>) => {
-        const { projectLogId, userId, logContent } = job.data;
+        const { projectLogId, secretKeyId, userId, logContent } = job.data;
         console.log(`\n======================================================`);
         console.log(`[AI Worker] 🚀 Started processing job ${job.id} for projectLogId: ${projectLogId}`);
 
@@ -58,11 +59,14 @@ export const logWorker = new Worker<ProcessLogJobData>(
             // 3. Save to LogsDebug Collection
             const debugInsight = await LogsDebug.create({
                 projectLogId,
+                secretKey: secretKeyId,
                 user: userId,
                 explanation: aiResponse.explanation,
                 solution: aiResponse.solution,
                 severity: aiResponse.severity
             });
+
+            await debugInsight.populate("secretKey", "-key");
 
             console.log(`[AI Worker] 💾 Saved AI Insight to LogsDebug collection for ID: ${projectLogId}`);
 

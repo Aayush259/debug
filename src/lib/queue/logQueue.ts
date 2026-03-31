@@ -16,11 +16,13 @@ export const logQueue = new Queue(LOG_QUEUE_NAME, {
  */
 export const enqueueLogForAnalysis = async (
     projectLogId: string,
+    secretKeyId: string,
     userId: string,
     logContent: string
 ) => {
     await logQueue.add("process-log-explanation", {
         projectLogId,
+        secretKeyId,
         userId,
         logContent
     }, {

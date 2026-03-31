@@ -184,6 +184,7 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
                 console.log(`[Ingestion API] Flagged ${logItem.level} log for AI processing. Triggering queue for ID: ${logItem._id.toString()}`);
                 enqueueLogForAnalysis(
                     logItem._id.toString(),
+                    logItem.secretKeyId.toString(),
                     logItem.user.toString(),
                     logItem.log
                 ).catch(err => console.error("[Ingestion API] Failed to enqueue log for AI analysis:", err));
