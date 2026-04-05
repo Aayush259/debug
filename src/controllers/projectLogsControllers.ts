@@ -28,8 +28,44 @@ export const getProjectLogs = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 50;
         const skip = (page - 1) * limit;
 
+        const { level, startDate, endDate } = req.query;
+
         // Query filtering by both secretKeyId and user to ensure ownership and avoid 403 errors on empty results
-        const filter = { secretKeyId: projectId, user: user.id };
+        const filter: any = { secretKeyId: projectId, user: user.id };
+
+        if (level && typeof level === "string") {
+            const levelLower = level.toLowerCase();
+            if (["info", "warn", "error"].includes(levelLower)) {
+                if (levelLower === "info") {
+                    // For 'info', we also want to match logs that might be missing the level field (old logs)
+                    filter.level = { $in: ["info", null, undefined] };
+                } else {
+                    filter.level = levelLower;
+                }
+            }
+        }
+
+        const dateFilter: any = {};
+        if (startDate && typeof startDate === "string" && startDate.trim() !== "") {
+            const date = new Date(startDate);
+            if (!isNaN(date.getTime())) {
+                dateFilter.$gte = date;
+            }
+        }
+        if (endDate && typeof endDate === "string" && endDate.trim() !== "") {
+            const date = new Date(endDate);
+            if (!isNaN(date.getTime())) {
+                // If the user provided a date without time, make it inclusive of the entire day
+                if (!endDate.includes("T") && !endDate.includes(":")) {
+                    date.setUTCHours(23, 59, 59, 999);
+                }
+                dateFilter.$lte = date;
+            }
+        }
+
+        if (Object.keys(dateFilter).length > 0) {
+            filter.createdAt = dateFilter;
+        }
 
         const totalLogs = await ProjectLogs.countDocuments(filter);
         const logs = await ProjectLogs.find(filter)
