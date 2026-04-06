@@ -15,27 +15,15 @@ export const getPendingInsights = async (req: Request, res: Response) => {
             return res.status(401).json({ status: "error", message: "Unauthorized" });
         }
 
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 50;
-        const skip = (page - 1) * limit;
-
         const filter = { status: "pending", user: user.id };
 
-        const totalLogs = await LogsDebug.countDocuments(filter);
-        const insights = await LogsDebug.find(filter)
-            .sort({ _id: -1 })
-            .skip(skip)
-            .limit(limit)
-            .populate("secretKey", "-key");
-
-        const hasMore = totalLogs > skip + insights.length;
+        // Use distinct to get a unique array of ProjectLogs IDs that have pending insights
+        const secretKeyIds = await LogsDebug.distinct("secretKey", filter);
 
         return res.status(200).json({
             status: "success",
-            message: "Pending AI insights fetched successfully",
-            data: insights,
-            totalLogs,
-            hasMore
+            message: "Pending AI insight IDs fetched successfully",
+            data: secretKeyIds
         });
     } catch (error) {
         console.error("Error fetching pending AI insights:", error);
@@ -49,13 +37,13 @@ export const getPendingInsights = async (req: Request, res: Response) => {
  * @param res - Express response object
  * @returns JSON response with original log related insights
  */
-export const getInsightsByProjectLogId = async (req: Request, res: Response) => {
+export const getInsightsBySecretKeyId = async (req: Request, res: Response) => {
     try {
-        const { projectLogId } = req.params;
+        const { secretKey } = req.params;
         const user = req.user;
 
-        if (!projectLogId) {
-            return res.status(400).json({ status: "error", message: "Project Log ID is required" });
+        if (!secretKey) {
+            return res.status(400).json({ status: "error", message: "Secret Key is required" });
         }
 
         if (!user) {
@@ -66,26 +54,69 @@ export const getInsightsByProjectLogId = async (req: Request, res: Response) => 
         const limit = parseInt(req.query.limit as string) || 50;
         const skip = (page - 1) * limit;
 
-        const filter = { projectLogId, user: user.id };
+        const filter: any = { secretKey, user: user.id };
+        if (req.query.status) {
+            filter.status = req.query.status;
+        }
 
-        const totalLogs = await LogsDebug.countDocuments(filter);
+        const totalInsights = await LogsDebug.countDocuments(filter);
         const insights = await LogsDebug.find(filter)
             .sort({ _id: -1 })
             .skip(skip)
             .limit(limit)
             .populate("secretKey", "-key");
 
-        const hasMore = totalLogs > skip + insights.length;
+        const hasMore = totalInsights > skip + insights.length;
 
         return res.status(200).json({
             status: "success",
             message: "AI insights for project log fetched successfully",
             data: insights,
-            totalLogs,
+            totalInsights,
             hasMore
         });
     } catch (error) {
         console.error("Error fetching AI insights by project log ID:", error);
+        return res.status(500).json({ status: "error", message: "Internal server error" });
+    }
+}
+
+/**
+ * Marks an AI insight as resolved.
+ * @param req - Express request object
+ * @param res - Express response object
+ * @returns JSON response with success message
+ */
+export const markInsightAsResolved = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const user = req.user;
+
+        if (!id) {
+            return res.status(400).json({ status: "error", message: "Insight ID is required" });
+        }
+
+        if (!user) {
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
+
+        const insight = await LogsDebug.findOneAndUpdate(
+            { _id: id, user: user.id },
+            { status: "resolved" },
+            { new: true }
+        );
+
+        if (!insight) {
+            return res.status(404).json({ status: "error", message: "Insight not found" });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: "AI insight marked as resolved successfully",
+            data: insight
+        });
+    } catch (error) {
+        console.error("Error marking AI insight as resolved:", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
