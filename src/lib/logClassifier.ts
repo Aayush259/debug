@@ -24,6 +24,15 @@ const ERROR_PATTERNS = [
     /(^|\b|\s)(ERROR|CRITICAL|FATAL|PANIC|EMERGENCY)(\b|\s|:)/i,
     /UnhandledPromiseRejectionWarning:/i,
     /Exception:/i,
+    // Python/Other general error formats (e.g. "SomethingError", "module.sub.SomethingError", "Namespace::Error")
+    /([a-z0-9_:.]*Error)\b/i,
+
+    // Database specific errors
+    /SQLSTATE\[/i,
+    /ORA-\d{5}/i,
+    /(Database|Query)\sError/i,
+    /mysqli_sql_exception/i,
+    /pg_query\(\)/i,
 ];
 
 /**
