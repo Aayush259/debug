@@ -120,3 +120,48 @@ export const markInsightAsResolved = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
+
+/**
+ * Retrieves AI insights history for the authenticated user with pagination.
+ * @param req - Express request object
+ * @param res - Express response object
+ * @returns JSON response with AI insights history
+ */
+export const getHistoryInsights = async (req: Request, res: Response) => {
+    try {
+        const user = req.user;
+
+        if (!user) {
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
+
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+
+        const filter: any = { user: user.id };
+        if (req.query.status) {
+            filter.status = req.query.status;
+        }
+
+        const totalInsights = await LogsDebug.countDocuments(filter);
+        const insights = await LogsDebug.find(filter)
+            .sort({ _id: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate("secretKey", "-key");
+
+        const hasMore = totalInsights > skip + insights.length;
+
+        return res.status(200).json({
+            status: "success",
+            message: "AI insights history fetched successfully",
+            data: insights,
+            totalInsights,
+            hasMore
+        });
+    } catch (error) {
+        console.error("Error fetching AI insights history:", error);
+        return res.status(500).json({ status: "error", message: "Internal server error" });
+    }
+}
