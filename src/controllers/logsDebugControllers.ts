@@ -130,16 +130,21 @@ export const markInsightAsResolved = async (req: Request, res: Response) => {
 export const getHistoryInsights = async (req: Request, res: Response) => {
     try {
         const user = req.user;
+        const { id } = req.query; // secretKey id
 
         if (!user) {
             return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
+
+        if (!id) {
+            return res.status(400).json({ status: "error", message: "Secret Key ID is required" });
         }
 
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        const filter: any = { user: user.id };
+        const filter: any = { user: user.id, secretKey: id };
         if (req.query.status) {
             filter.status = req.query.status;
         }
