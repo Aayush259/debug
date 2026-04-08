@@ -14,6 +14,11 @@ const config = {
     github_client_id: process.env.GITHUB_CLIENT_ID || "",
     github_client_secret: process.env.GITHUB_CLIENT_SECRET || "",
     encryption_key: process.env.ENCRYPTION_KEY || "",
+    mail_host: process.env.SMTP_HOST || "",
+    mail_port: Number(process.env.SMTP_PORT) || 465,
+    mail_user: process.env.SMTP_USER || "",
+    mail_password: process.env.SMTP_PASS || "",
+    mail_from: process.env.SMTP_FROM || "",
 }
 
 export default config;

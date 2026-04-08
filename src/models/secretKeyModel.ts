@@ -1,5 +1,5 @@
 /**
- * A Secret Key is an API token that acts as a secure bridge between a User's external application and DBug.
+ * A Secret Key is an API token that acts as a secure bridge between a User's external application and Zag.
  */
 
 import bcrypt from "bcryptjs";

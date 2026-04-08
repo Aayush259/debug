@@ -3,9 +3,13 @@ import { connection } from "../redis.js";
 import { LOG_QUEUE_NAME } from "../queue/logQueue.js";
 import { UserSettings } from "../../models/userSettings.js";
 import { LogsDebug } from "../../models/logsDebugModel.js";
+import { ProjectLogs } from "../../models/projectLogsModel.js";
 import { generateLogExplanation } from "../ai/index.js";
 import { decrypt } from "../encryption.js";
 import { AIProvider } from "../ai/providers.js";
+import { User } from "../../models/userModel.js";
+import { mailService } from "../mailService.js";
+import config from "../../config/config.js";
 
 interface ProcessLogJobData {
     projectLogId: string;
@@ -22,6 +26,76 @@ export const logWorker = new Worker<ProcessLogJobData>(
         console.log(`[AI Worker] 🚀 Started processing job ${job.id} for projectLogId: ${projectLogId}`);
 
         try {
+            const sendInsightEmail = async (insight: any) => {
+                try {
+                    const user = await User.findById(userId);
+                    if (user && user.email) {
+                        const projectName = (insight.secretKey as any).projectName || "Unknown Project";
+                        const appLink = `${config.frontend_url}/console/projects/${secretKeyId}`;
+                        const glimpse = insight.explanation.length > 150
+                            ? insight.explanation.substring(0, 150) + "..."
+                            : insight.explanation;
+
+                        console.log(`[AI Worker] 📧 Sending AI Insight email to: ${user.email}`);
+                        await mailService.sendAIInsightEmail({
+                            email: user.email,
+                            name: user.name,
+                            projectName,
+                            errorMessage: logContent,
+                            insightGlimpse: glimpse,
+                            appLink
+                        });
+                    }
+                } catch (mailError) {
+                    console.error(`[AI Worker] ❌ Failed to send email notification:`, mailError);
+                }
+            };
+
+            // 0. Check if the exact same error already has an insight
+            console.log(`[AI Worker] 🔍 Checking for existing identical insights...`);
+            const existingLogs = await ProjectLogs.find({
+                log: logContent,
+                secretKeyId,
+                _id: { $ne: projectLogId }
+            }).sort({ createdAt: -1 }).limit(10);
+
+            let existingInsight = null;
+            for (const prevLog of existingLogs) {
+                existingInsight = await LogsDebug.findOne({ projectLogId: prevLog._id });
+                if (existingInsight) {
+                    break;
+                }
+            }
+
+            if (existingInsight) {
+                console.log(`[AI Worker] ♻️ Found existing insight for identical error. Duplicating...`);
+
+                // Save to LogsDebug Collection (Duplicated)
+                const debugInsight = await LogsDebug.create({
+                    projectLogId,
+                    secretKey: secretKeyId,
+                    user: userId,
+                    explanation: existingInsight.explanation,
+                    solution: existingInsight.solution,
+                    severity: existingInsight.severity
+                });
+
+                await debugInsight.populate("secretKey", "-key");
+
+                console.log(`[AI Worker] 💾 Saved Duplicated AI Insight to LogsDebug collection for ID: ${projectLogId}`);
+
+                // Trigger Socket event via Redis Pub/Sub
+                console.log(`[AI Worker] 📡 Publishing Insight to Redis Pub/Sub channel 'ai-insight-channel' for User: ${userId}`);
+                await connection.publish("ai-insight-channel", JSON.stringify({
+                    userId: userId.toString(),
+                    insight: debugInsight
+                }));
+
+                await sendInsightEmail(debugInsight);
+
+                return debugInsight;
+            }
+
             // 1. Fetch user's AI preferences
             const userSettings = await UserSettings.findOne({ user: userId });
             if (!userSettings) {
@@ -76,6 +150,9 @@ export const logWorker = new Worker<ProcessLogJobData>(
                 userId: userId.toString(),
                 insight: debugInsight
             }));
+
+            // 5. Send Email Notification
+            await sendInsightEmail(debugInsight);
 
             return debugInsight;
         } catch (error) {
