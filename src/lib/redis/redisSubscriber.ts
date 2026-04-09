@@ -19,7 +19,7 @@
 
 import { Server } from "socket.io";
 import { connection } from "./redis.js";
-import { EVENTS } from "./utils.js";
+import { EVENTS } from "../utils.js";
 
 /**
  * setupRedisSubscriber

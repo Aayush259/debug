@@ -32,7 +32,7 @@ import { Server } from "socket.io";
 import { auth } from "./lib/auth.js";
 import config from "./config/config.js";
 import { createServer } from "node:http";
-import { connectDB } from "./lib/database.js";
+import { connectDB } from "./lib/database/database.js";
 import { toNodeHandler } from "better-auth/node";
 import secretKeyRoutes from "./routes/secretKeyRoutes.js";
 import { requireAuth } from "./middleware/authMiddleware.js";
@@ -40,7 +40,7 @@ import projectLogsRoutes from "./routes/projectLogsRoutes.js";
 import userSettingsRoutes from "./routes/userSettingsRoutes.js";
 import logsDebugRoutes from "./routes/logsDebugRoutes.js";
 import { setupSocketHandlers, SocketData } from "./socket/index.js";
-import { setupRedisSubscriber } from "./lib/redisSubscriber.js";
+import { setupRedisSubscriber } from "./lib/redis/redisSubscriber.js";
 import { saveProjectLogs } from "./controllers/projectLogsControllers.js";
 import "./lib/workers/logWorker.js"; // Initialize background worker natively
 

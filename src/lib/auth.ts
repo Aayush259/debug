@@ -15,7 +15,7 @@
  *    driver (from `db.ts`) for efficient session and account storage.
  */
 
-import { db } from "./db.js";
+import { db } from "./database/db.js";
 import config from "../config/config.js";
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";

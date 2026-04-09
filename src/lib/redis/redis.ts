@@ -16,7 +16,7 @@
  */
 
 import Redis from "ioredis";
-import config from "../config/config.js";
+import config from "../../config/config.js";
 
 /**
  * redisOptions

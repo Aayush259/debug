@@ -19,7 +19,7 @@
  */
 
 import { Queue } from "bullmq";
-import { connection } from "../redis.js";
+import { connection } from "../redis/redis.js";
 
 /**
  * LOG_QUEUE_NAME

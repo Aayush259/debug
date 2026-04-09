@@ -24,7 +24,7 @@
  */
 
 import { Worker, Job } from "bullmq";
-import { connection } from "../redis.js";
+import { connection } from "../redis/redis.js";
 import { LOG_QUEUE_NAME } from "../queue/logQueue.js";
 import { UserSettings } from "../../models/userSettings.js";
 import { LogsDebug } from "../../models/logsDebugModel.js";
@@ -32,7 +32,7 @@ import { ProjectLogs } from "../../models/projectLogsModel.js";
 import { generateLogExplanation } from "../ai/index.js";
 import { decrypt } from "../encryption.js";
 import { User } from "../../models/userModel.js";
-import { mailService } from "../mailService.js";
+import { mailService } from "../services/mailService.js";
 import config from "../../config/config.js";
 
 export const logWorker = new Worker<ProcessLogJobData>(
