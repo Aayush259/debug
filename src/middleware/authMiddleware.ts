@@ -1,10 +1,35 @@
+/**
+ * @file authMiddleware.ts
+ * @description Authentication middleware for the Zag SaaS platform.
+ * 
+ * CORE CONCEPT:
+ * The `requireAuth` middleware ensures that only authenticated users 
+ * can access the protected routes consumed by the **Zag Frontend**.
+ * It validates sessions and prevents unauthorized access to sensitive 
+ * project data and AI insights.
+ * 
+ * Workflow:
+ * 1. Extraction: Retrieves session information from incoming request headers 
+ *    sent by the Zag Frontend.
+ * 2. Validation: Uses better-auth to check if a valid session exists.
+ * 3. Injection: Attaches the `user` and `session` objects to the Express 
+ *    Request for use by downstream controllers.
+ * 4. Rejection: Terminates unauthorized requests with a 401 response.
+ */
+
 import { Request, Response, NextFunction } from "express";
 import { auth } from "../lib/auth.js";
 
-// Infer session types directly from the Better Auth instance
+/** 
+ * SessionType
+ * Inferred session types directly from the Better Auth instance.
+ */
 type SessionType = typeof auth.$Infer.Session;
 
-// Augment the Express Request interface to include user and session safely
+/**
+ * Global Request Expansion
+ * Augment the Express Request interface to include user and session safely.
+ */
 declare global {
     namespace Express {
         interface Request {
@@ -14,6 +39,10 @@ declare global {
     }
 }
 
+/**
+ * requireAuth Middleware
+ * Protects routes by enforcing session-based authentication.
+ */
 export const requireAuth = async (
     req: Request,
     res: Response,

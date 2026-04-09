@@ -1,3 +1,28 @@
+/**
+ * @file logWorker.ts
+ * @description Background processing engine for AI-powered log analysis.
+ * 
+ * CORE CONCEPT:
+ * The Log Worker is the "brain" of the Zag platform. It operates 
+ * asynchronously to transform raw log data into actionable AI insights.
+ * 
+ * Workflow:
+ * 1. Ingestion & Deduplication: Receives logs from the queue and checks for 
+ *    identical existing insights to avoid redundant AI costs.
+ * 2. Secret Decryption: Retrieves the user's encrypted AI provider keys and 
+ *    decrypts them for secure use.
+ * 3. AI Analysis: Communicates with external AI providers (OpenAI, Anthropic) 
+ *    to generate explanations and solutions.
+ * 4. Persistence & Distribution: Saves the insight to the database and 
+ *    triggers real-time notifications via Redis Pub/Sub.
+ * 5. Notifications: Sends email alerts for critical issues discovered during 
+ *    analysis.
+ * 
+ * Infrastructure:
+ * - Powered by `BullMQ` for robust, scalable background processing.
+ * - Utilizes Redis as the task backend and real-time messaging bridge.
+ */
+
 import { Worker, Job } from "bullmq";
 import { connection } from "../redis.js";
 import { LOG_QUEUE_NAME } from "../queue/logQueue.js";
@@ -6,17 +31,9 @@ import { LogsDebug } from "../../models/logsDebugModel.js";
 import { ProjectLogs } from "../../models/projectLogsModel.js";
 import { generateLogExplanation } from "../ai/index.js";
 import { decrypt } from "../encryption.js";
-import { AIProvider } from "../ai/providers.js";
 import { User } from "../../models/userModel.js";
 import { mailService } from "../mailService.js";
 import config from "../../config/config.js";
-
-interface ProcessLogJobData {
-    projectLogId: string;
-    secretKeyId: string;
-    userId: string;
-    logContent: string;
-}
 
 export const logWorker = new Worker<ProcessLogJobData>(
     LOG_QUEUE_NAME,

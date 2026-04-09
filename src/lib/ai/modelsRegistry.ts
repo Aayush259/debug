@@ -1,3 +1,23 @@
+/**
+ * @file modelsRegistry.ts
+ * @description Centralized directory of supported AI models for the Zag platform.
+ * 
+ * CORE CONCEPT:
+ * The Model Registry acts as the definitive catalog of Large Language Models 
+ * (LLMs) that developers can choose from within the Zag Dashboard. It 
+ * provides the necessary metadata to power the frontend selection menus 
+ * and backend provider configurations.
+ * 
+ * Capabilities:
+ * 1. Multi-Provider Support: Catalogues models from Anthropic, OpenAI, and Google.
+ * 2. Static Metadata: Stores human-readable names, descriptions, and 
+ *    provider identifiers for each model.
+ * 3. Frontend Integration: This data is directly consumed by the Zag Frontend 
+ *    to populate settings and configuration menus.
+ * 4. System Extensibility: Adding support for a new AI model simply requires 
+ *    adding an entry to this registry.
+ */
+
 export const anthropicModels: AIModelRegistryItem[] = [
     {
         id: "anthropic/claude-3-7-sonnet-latest",

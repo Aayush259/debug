@@ -1,14 +1,31 @@
+/**
+ * @file ai/index.ts
+ * @description Central orchestration layer for AI-powered log interpretation.
+ * 
+ * CORE CONCEPT:
+ * This component acts as the bridge between the Zag platform's data layer 
+ * and external Large Language Models (LLMs). It transforms raw application 
+ * logs into structured, actionable insights.
+ * 
+ * Responsibilities:
+ * 1. Orchestration: Coordinates model selection (via `providers.ts`) and 
+ *    prompt construction (via `prompts.ts`).
+ * 2. Prompt Engineering: Applies specialized system prompts to ensure the 
+ *    AI delivers precise, developer-focused explanations and solutions.
+ * 3. Result Parsing: Uses robust regex and JSON parsing to convert the 
+ *    AI's text output into a strictly typed schema (Explanation, Solution, Severity).
+ * 4. Error Handling: Provides graceful fallbacks and user-friendly error 
+ *    messages in case of API failures or malformed AI responses.
+ * 
+ * Workflow:
+ * - Triggered by the `logWorker` during background task execution.
+ */
+
 import { generateText } from "ai";
-import { getLanguageModel, AIProvider } from "./providers.js";
+import { getLanguageModel } from "./providers.js";
 import { SYSTEM_PROMPTS, getLogExplainerUserPrompt } from "./prompts.js";
 
-interface GenerateExplanationParams {
-    provider: AIProvider;
-    modelName: string;
-    apiKey: string;
-    log: string;
-    metadata?: Record<string, any>;
-}
+
 
 /**
  * Generates a structured JSON explanation for a given log using the specified AI model.

@@ -1,3 +1,31 @@
+/**
+ * @file index.ts
+ * @description Application entry point and main bootstrap orchestrator.
+ * 
+ * CORE CONCEPT:
+ * This file is the central "wiring" hub of the Zag Backend. It initializes 
+ * the Express server and bootstraps all critical internal services (Database, 
+ * Redis, Sockets, and Background Workers).
+ * 
+ * Orchestration Responsibilities:
+ * 1. Server Bootstrap: Initializes the Express and HTTP servers on the 
+ *    configured port.
+ * 2. Real-Time Setup: Configures the Socket.IO server and binds it to the 
+ *    Express application for centralized access via `app.get("io")`.
+ * 3. Connection Management: Establishes connections to MongoDB (Mongoose) 
+ *    and Redis (via the Subscriber bootstrap).
+ * 4. Security & Auth: Configures global CORS policies and initializes the 
+ *    Better Auth session handlers for both REST and WebSocket layers.
+ * 5. Route Registration: Hooks up all domain-specific routes (Secrets, 
+ *    Logs, Settings, Insights) and the Public Ingestion endpoint.
+ * 6. Worker Invocation: Triggers the native initialization of the 
+ *    `logWorker` to begin processing the AI queue.
+ * 
+ * Infrastructure:
+ * - Framework: Express.js + Socket.IO.
+ * - Middleware: CORS, express.json(), better-auth.
+ */
+
 import cors from "cors";
 import express from "express";
 import { Server } from "socket.io";

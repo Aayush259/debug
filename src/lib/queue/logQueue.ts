@@ -1,6 +1,30 @@
+/**
+ * @file logQueue.ts
+ * @description Decoupling and buffering layer for the AI analysis pipeline.
+ * 
+ * CORE CONCEPT:
+ * The Log Queue acts as a robust task buffer between the synchronous 
+ * ingestion API and the asynchronous AI analysis worker.
+ * 
+ * Why it exists:
+ * 1. Resilience: Prevents the API from being overwhelmed during log bursts 
+ *    by offloading heavy processing to the background.
+ * 2. Reliability: Implements automatic retries with exponential backoff 
+ *    to handle transient AI provider errors or rate limits.
+ * 3. Scalability: Allows the `logWorker` to process logs at its own pace 
+ *    without blocking the ingestion flow.
+ * 
+ * Infrastructure:
+ * - Powered by `BullMQ` using Redis as the persistent task backend.
+ */
+
 import { Queue } from "bullmq";
 import { connection } from "../redis.js";
 
+/**
+ * LOG_QUEUE_NAME
+ * The dedicated Redis-backed queue name for all AI log processing tasks.
+ */
 export const LOG_QUEUE_NAME = "ai-log-processing";
 
 export const logQueue = new Queue(LOG_QUEUE_NAME, {

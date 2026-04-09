@@ -1,4 +1,27 @@
 /**
+ * @file prompts.ts
+ * @description Expert personas and instructional templates for Zag AI analysis.
+ * 
+ * CORE CONCEPT:
+ * This component defines the "intelligence profile" of the platform's AI. 
+ * It contains the expert instructions that guide Large Language Models (LLMs) 
+ * in analyzing raw logs and providing high-quality solutions.
+ * 
+ * Responsibilities:
+ * 1. Persona Definition: Establishes the AI as an "expert senior software 
+ *    engineer and debugger".
+ * 2. Output Constraint: Enforces a strict, machine-readable JSON schema to 
+ *    ensure the backend and frontend can reliably process the AI's insights.
+ * 3. Contextual Injection: Provides templates to merge raw log data with 
+ *    environment metadata (e.g., project language, stack info) for deeper analysis.
+ * 
+ * Strategy:
+ * - Uses system-level instructions to minimize "hallucinations" and conversational 
+ *   noise.
+ * - Forces the AI to identify a "severity" level for every analyzed event.
+ */
+
+/**
  * System prompts for the AI log explainer.
  */
 export const SYSTEM_PROMPTS = {

@@ -1,12 +1,31 @@
+/**
+ * @file redisSubscriber.ts
+ * @description Real-time bridge between background analysis and the Zag console.
+ * 
+ * CORE CONCEPT:
+ * The Redis Subscriber is a critical component for the platform's "real-time" 
+ * value proposition. It listens for events published by background workers 
+ * (like the logWorker) and immediately pushes them to the **Zag Frontend**.
+ * 
+ * Data Flow:
+ * 1. Listening: Subscribes to the `ai-insight-channel` in Redis.
+ * 2. Interception: When a worker finishes an AI analysis, it publishes a 
+ *    message containing the `userId` and the new `insight`.
+ * 3. Emission: The subscriber parses the message and uses Socket.IO to 
+ *    emit a `NEW_AI_INSIGHT` event to the specific user's web session.
+ * 4. Experience: This enables the "Instant Resolve" experience where 
+ *    developers see AI insights pop up on their dashboard without refreshing.
+ */
+
 import { Server } from "socket.io";
 import { connection } from "./redis.js";
 import { EVENTS } from "./utils.js";
 
 /**
- * Subscribes to the Redis Pub/Sub channel for AI insights and forwards them 
- * directly to the connected Socket.IO clients.
+ * setupRedisSubscriber
+ * Configures the real-time listener for AI insights.
  * 
- * @param io - The Socket.IO server instance
+ * @param io - The Socket.IO server instance responsible for client communication.
  */
 export const setupRedisSubscriber = (io: Server) => {
     // Create a duplicate connection specifically for subscribing (Redis requirement)

@@ -1,3 +1,27 @@
+/**
+ * @file logsDebugControllers.ts
+ * @description Business logic for managing AI-generated log insights.
+ * 
+ * CORE CONCEPT:
+ * This controller serves as the primary data interface for AI insights 
+ * on the Zag platform. It bridges the gap between the `LogsDebug` 
+ * domain model and the Zag Frontend dashboard.
+ * 
+ * Responsibilities:
+ * 1. Data Retrieval: Fetches paginated lists of AI insights, allowing 
+ *    developers to browse error explanations and solutions.
+ * 2. State Management: Provides endpoints to transition insights from 
+ *    "pending" to "resolved" states.
+ * 3. Targeted Filtering: Ensures developers only access insights 
+ *    associated with their own projects and account.
+ * 4. Distinct Scoping: Handles specific queries for pending insights vs. 
+ *    full historical analysis.
+ * 
+ * Consumer:
+ * - These functions are exclusively called by the dashboard internal 
+ *   routes to populate the Zag Dashboard UI.
+ */
+
 import { Request, Response } from "express";
 import { LogsDebug } from "../models/logsDebugModel";
 

@@ -1,3 +1,30 @@
+/**
+ * @file secretKeyControllers.ts
+ * @description Management engine for project API tokens and identifiers.
+ * 
+ * CORE CONCEPT:
+ * This controller manages the "Secure Bridges" (Secret Keys) that link 
+ * external applications to the Zag platform. It handles the CRUD 
+ * operations for projects and their associated security credentials.
+ * 
+ * Responsibilities:
+ * 1. Key Generation: Securely creates unique API tokens (hashed via 
+ *    bcrypt in the model layer) for project identification.
+ * 2. Project Management: Allows developers to update human-readable 
+ *    metadata like project names and icons.
+ * 3. Access Control: Ensures developers can only manage and view 
+ *    keys belonging to their own account.
+ * 4. Token Visibility: Manages the secure display and deletion of 
+ *    sensitive API keys.
+ * 
+ * Consumer:
+ * - These functions are exclusively called by the dashboard internal 
+ *   routes to populate the Zag Dashboard UI.
+ * 
+ * Note: Decryption and verification of these keys during log ingestion 
+ * is handled separately in the `projectLogsControllers.ts` ingestion flow.
+ */
+
 import { Request, Response } from "express";
 import { SecretKey } from "../models/secretKeyModel.js";
 

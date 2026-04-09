@@ -1,3 +1,27 @@
+/**
+ * @file projectLogsControllers.ts
+ * @description Ingestion and retrieval engine for application log data.
+ * 
+ * CORE CONCEPT:
+ * This controller acts as the primary gateway for all log data on the 
+ * Zag platform. It manages the lifecycle of logs from external 
+ * application ingestion to dashboard retrieval.
+ * 
+ * Responsibilities:
+ * 1. Log Ingestion (Public API): Receives and processes log arrays from 
+ *    external apps, verifying secret keys and classifying log levels.
+ * 2. Real-Time Propagation: Triggers immediate emission of ingested logs 
+ *    to the Zag Frontend via Socket.IO.
+ * 3. AI Triggering: Identifies "error" or "warn" logs and enqueues them 
+ *    for background AI analysis.
+ * 4. Data Retrieval (Internal Dashboard): Provides paginated, filtered 
+ *    access to raw logs for the developer dashboard.
+ * 
+ * Consumer:
+ * - Public Ingestion Endpoints (for external apps).
+ * - Internal Dashboard Endpoints (for the Zag Frontend).
+ */
+
 import { Request, Response } from "express";
 import { ProjectLogs } from "../models/projectLogsModel";
 import { SecretKey } from "../models/secretKeyModel";

@@ -1,4 +1,25 @@
-export type LogLevel = "info" | "warn" | "error";
+/**
+ * @file logClassifier.ts
+ * @description Intelligent log severity classification engine for the Zag platform.
+ * 
+ * CORE CONCEPT:
+ * The Log Classifier acts as the "smart filter" at the entrance of the ingestion 
+ * pipeline. It analyzes raw log text to determine its severity level 
+ * (info, warn, error).
+ * 
+ * Why it exists:
+ * 1. AI Triggering: The platform only triggers the expensive AI analysis 
+ *    pipeline for logs classified as "error".
+ * 2. Cross-Platform Support: It contains patterns for Node.js, PHP/Laravel, 
+ *    Python/Django, and various databases, making the Zag SDK "framework-agnostic".
+ * 3. Noise Reduction: By filtering out 'info' and 'warn' logs from the 
+ *    AI pipeline, it reduces noise for the developer and saves compute costs.
+ * 
+ * How it works:
+ * - Uses a prioritized regex-matching strategy.
+ * - Checks for explicit stack traces and framework-specific error signatures first.
+ * - Falls back to generic severity keywords and finally defaults to 'info'.
+ */
 
 /**
  * Common patterns that indicate an error level log across different languages/frameworks.

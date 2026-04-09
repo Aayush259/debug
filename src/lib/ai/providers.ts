@@ -1,8 +1,27 @@
+/**
+ * @file providers.ts
+ * @description Multi-vendor abstraction layer for AI model instantiation.
+ * 
+ * CORE CONCEPT:
+ * This file provides a unified interface for interacting with various AI 
+ * providers (OpenAI, Anthropic, Google). It leverages the Vercel AI SDK 
+ * to normalize model behavior and configuration across different vendors.
+ * 
+ * Capabilities:
+ * 1. Multi-Cloud Instantiation: Handles the specific SDK calls required 
+ *    to initialize models from three major vendors.
+ * 2. Secure Auth Injection: Injects user-provided API keys (decrypted in 
+ *    the worker layer) into the provider-specific delivery mechanisms.
+ * 3. Identifier Normalization: Standardizes model IDs (e.g., stripping 
+ *    provider prefixes) to match the expectations of individual vendor SDKs.
+ * 
+ * Infrastructure:
+ * - Built on the Vercel AI SDK (`ai` package) for cross-provider compatibility.
+ */
+
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
-
-export type AIProvider = "google" | "openai" | "anthropic";
 
 /**
  * Get a language model instance for the specified provider and model.

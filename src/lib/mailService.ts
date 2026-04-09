@@ -1,6 +1,30 @@
+/**
+ * @file mailService.ts
+ * @description Outgoing email communication service for the Zag platform.
+ * 
+ * CORE CONCEPT:
+ * The Mail Service handles all transactional and notification-based emails 
+ * sent to developers. It acts as the primary "off-platform" channel for 
+ * delivering critical alerts and system updates.
+ * 
+ * Responsibilities:
+ * 1. Proactive Alerts: Delivering "AI Insight" notifications directly to the 
+ *    user's inbox when a significant issue is detected in their application.
+ * 2. Templating: Constructing rich HTML email content (like the AI Insight 
+ *    alert) using modern CSS-in-HTML techniques for maximum compatibility.
+ * 
+ * Infrastructure:
+ * - Uses `nodemailer` to interface with the platform's SMTP server.
+ * - Configuration is centralized via the project's `config.js`.
+ */
+
 import nodemailer from "nodemailer";
 import config from "../config/config.js";
 
+/**
+ * MailService
+ * A singleton class providing high-level methods for email delivery.
+ */
 class MailService {
     private transporter = nodemailer.createTransport({
         host: config.mail_host,

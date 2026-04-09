@@ -1,9 +1,41 @@
+/**
+ * @file userSettingsControllers.ts
+ * @description Management engine for AI preferences and encrypted provider credentials.
+ * 
+ * CORE CONCEPT:
+ * This controller allows developers to personalize their AI analysis 
+ * experience on the Zag platform. It serves as the secure interface for 
+ * managing third-party LLM credentials and selecting preferred models.
+ * 
+ * Responsibilities:
+ * 1. Secure Credential Storage: Orchestrates the encryption and decryption 
+ *    of provider API keys (OpenAI, Anthropic, Gemini) using the AES-256 utility.
+ * 2. Model Configuration: Validates and updates the developer's preferred 
+ *    AI model and provider selection.
+ * 3. Quota Management: Tracks and updates preferences for using internal 
+ *    free quotas vs. personal API keys.
+ * 4. Model Discovery: Provides a validated list of supported models from 
+ *    the central registry to the Zag Frontend.
+ * 
+ * Consumer:
+ * - These functions are exclusively called by the dashboard internal 
+ *   routes to populate the Zag Dashboard UI.
+ * 
+ * Security:
+ * - Sensitive API keys are NEVER sent to the frontend in their encrypted 
+ *   form; they are decrypted on-the-fly for the authorized user and 
+ *   encrypted before storage.
+ */
+
 import { Request, Response } from "express";
 import { UserSettings } from "../models/userSettings.js";
 import { encrypt, decrypt } from "../lib/encryption.js";
 import { z } from "zod";
 import { allModels } from "../lib/ai/modelsRegistry.js";
 
+/**
+ * Validation schema for updating user settings.
+ */
 const updateUserSettingsSchema = z.object({
     modelProvider: z.string().optional(),
     model: z.string().optional(),
@@ -15,27 +47,13 @@ const updateUserSettingsSchema = z.object({
     useFreeQuota: z.boolean().optional()
 });
 
-// interface VercelModel {
-//     id: string;
-//     owned_by: string;
-//     name: string;
-// }
-
-// Function to fetch models from the Vercel API
-// const fetchAvailableModels = async () => {
-//     try {
-//         const response = await fetch("https://ai-gateway.vercel.sh/v1/models");
-//         if (!response.ok) {
-//             throw new Error(`Failed to fetch models: ${response.status}`);
-//         }
-//         const data = await response.json();
-//         return (data as any).data as VercelModel[];
-//     } catch (error) {
-//         console.error("Error fetching models from Vercel:", error);
-//         return [];
-//     }
-// };
-
+/**
+ * Retrieves the AI settings for the authenticated user.
+ * 
+ * @param req - Express request object.
+ * @param res - Express response object.
+ * @returns JSON response containing current settings, decrypted keys, and available models.
+ */
 export const getUserSettings = async (req: Request, res: Response) => {
     try {
         const user = req.user;
@@ -57,8 +75,6 @@ export const getUserSettings = async (req: Request, res: Response) => {
             anthropic: decrypt(userSettings.apiKeys?.anthropic || "")
         };
 
-        // const models = await fetchAvailableModels();
-
         const resultData = {
             ...userSettings.toObject(),
             apiKeys,
@@ -76,6 +92,13 @@ export const getUserSettings = async (req: Request, res: Response) => {
     }
 }
 
+/**
+ * Updates the AI settings and provider credentials for the authenticated user.
+ * 
+ * @param req - Express request object containing the partial settings update.
+ * @param res - Express response object.
+ * @returns JSON response containing the updated settings and decrypted keys.
+ */
 export const updateUserSettings = async (req: Request, res: Response) => {
     try {
         const user = req.user;

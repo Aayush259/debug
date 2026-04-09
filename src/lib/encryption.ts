@@ -1,6 +1,31 @@
+/**
+ * @file encryption.ts
+ * @description Secure data-at-rest protection for the Zag platform.
+ * 
+ * CORE CONCEPT:
+ * The Encryption Utility provides a cryptographic layer for protecting 
+ * sensitive user information stored in the database. Its primary role 
+ * is to secure external service credentials (like OpenAI/Anthropic API keys).
+ * 
+ * Security Approach:
+ * 1. Symmetric Encryption: Uses the `aes-256-cbc` algorithm for high-performance, 
+ *    secure data protection.
+ * 2. Key Derivation: Leverages `crypto.scryptSync` with a project-wide 
+ *    `encryption_key` to derive a strong 256-bit cryptographic key.
+ * 3. Random Initialization Vectors (IV): Each encryption operation generates 
+ *    a unique IV to ensure that the same plaintext results in different 
+ *    ciphertext every time.
+ * 4. Graceful Degradation: The utility is designed to handle non-encrypted 
+ *    (legacy) data gracefully, returning it as-is if decryption fails.
+ */
+
 import crypto from "crypto";
 import config from "../config/config.js";
 
+/**
+ * ENCRYPTION_KEY
+ * The derived 32-byte key used for AES-256-CBC encryption.
+ */
 const ENCRYPTION_KEY = crypto.scryptSync(config.encryption_key, "salt", 32);
 const IV_LENGTH = 16;
 

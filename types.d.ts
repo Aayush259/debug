@@ -1,3 +1,5 @@
+type LogLevel = "info" | "warn" | "error";
+type AIProvider = "google" | "openai" | "anthropic";
 
 interface AIModelRegistryItem {
     id: string;
@@ -6,5 +8,20 @@ interface AIModelRegistryItem {
     owned_by: "google" | "openai" | "anthropic";
     name: string;
     description: string;
+};
+
+interface ProcessLogJobData {
+    projectLogId: string;
+    secretKeyId: string;
+    userId: string;
+    logContent: string;
+};
+
+interface GenerateExplanationParams {
+    provider: AIProvider;
+    modelName: string;
+    apiKey: string;
+    log: string;
+    metadata?: Record<string, any>;
 };
 

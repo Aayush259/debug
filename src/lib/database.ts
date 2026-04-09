@@ -1,3 +1,23 @@
+/**
+ * @file database.ts
+ * @description Centralized Mongoose connection management for the Zag platform.
+ * 
+ * CORE CONCEPT:
+ * This file serves as the primary gateway for Object-Relational Mapping (ORM) 
+ * style database access. It initializes and manages the Mongoose connection 
+ * used by all domain models (Users, ProjectLogs, AI Insights, etc.).
+ * 
+ * Implementation Details:
+ * 1. Singleton Pattern: Ensures that only one database connection is active 
+ *    at any time, preventing resource leakage during hot-reloads.
+ * 2. Robustness: Includes event listeners for monitoring connection health 
+ *    (e.g., handling unexpected disconnections).
+ * 3. Configuration: Optimizes connection parameters (pool size, timeouts) 
+ *    for a responsive SaaS environment.
+ * 4. Separation of Concerns: This connection is dedicated to domain-level 
+ *    data, while the raw driver (in `db.ts`) handles system-level authentication.
+ */
+
 import mongoose from "mongoose";
 import config from "../config/config.js";
 
@@ -10,9 +30,8 @@ if (!MONGODB_URI) {
 let isConnected = false;
 
 /**
- * Connects to MongoDB using Mongoose.
- * Implements a singleton pattern to prevent multiple connections during hot-reloads
- * or if called multiple times in controllers.
+ * connectDB
+ * Initializes the Mongoose connection to MongoDB.
  */
 export const connectDB = async () => {
     mongoose.set("strictQuery", true);
