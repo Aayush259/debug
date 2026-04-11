@@ -38,14 +38,14 @@ export const connectDB = async () => {
 
     // Return early if already connected
     if (isConnected) {
-        console.log("=> Using existing database connection");
+        console.log(" => [LIB: connectDB] Using existing database connection");
         return;
     }
 
     // If mongoose has already an active connection, use it
     if (mongoose.connection.readyState === 1) {
         isConnected = true;
-        console.log("=> Using active mongoose connection");
+        console.log(" => [LIB: connectDB] Using active mongoose connection");
         return;
     }
 
@@ -58,19 +58,19 @@ export const connectDB = async () => {
         });
 
         isConnected = !!db.connections[0].readyState;
-        console.log("=> MongoDB connected successfully (Mongoose)");
+        console.log(" => [LIB: connectDB] MongoDB connected successfully (Mongoose)");
     } catch (error) {
-        console.error("=> MongoDB connection error:", error);
+        console.error(" => [LIB ERROR: connectDB] MongoDB connection error:", error);
         throw new Error("Failed to connect to MongoDB");
     }
 };
 
 // Handle connection events for robustness
 mongoose.connection.on("disconnected", () => {
-    console.warn("=> MongoDB disconnected!");
+    console.warn(" => [LIB: connectDB] MongoDB disconnected!");
     isConnected = false;
 });
 
 mongoose.connection.on("error", (err) => {
-    console.error("=> MongoDB connection error:", err);
+    console.error(" => [LIB ERROR: connectDB] MongoDB connection error:", err);
 });

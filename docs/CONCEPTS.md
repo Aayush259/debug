@@ -57,6 +57,7 @@ A **SecretKey** acts as the secure bridge between an external application and Za
 A secure token assigned to a specific application (Project) used for authenticating log transmissions.
 - **Backend naming:** `Secret Key`
 - **Frontend naming:** `Project`
+- **Quota Management:** Project creation is subject to plan-based limits. Each user account is assigned a `UserPlan` that defines the total number of projects (`totalProjects`) allowed and tracks the `remainingProjects` balance.
 - **Crucial Notes:**
     - **Mapping:** In the backend, a `SecretKey` document defines the "Project" via its `projectName` field. The frontend treats this document as a project entity.
     - **Security:** Raw API keys are **never** stored in the database. Only their `bcrypt` hashes are saved.

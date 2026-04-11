@@ -77,7 +77,7 @@ export const requireAuth = async (
 
         next();
     } catch (error) {
-        console.error("Auth Middleware Error:", error instanceof Error ? error.message : String(error));
+        console.error(" => [LIB ERROR: authMiddleware] Auth Middleware Error:", error instanceof Error ? error.message : String(error));
         res.status(500).json({ error: "Internal Server Error" });
     }
 };

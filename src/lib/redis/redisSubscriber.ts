@@ -33,10 +33,10 @@ export const setupRedisSubscriber = (io: Server) => {
 
     subscriber.subscribe("ai-insight-channel", (err, count) => {
         if (err) {
-            console.error("Failed to subscribe to AI insight channel:", err);
+            console.error(" => [LIB ERROR: redisSubscriber] Failed to subscribe to AI insight channel:", err);
             return;
         }
-        console.log(`Subscribed to ${count} channel(s).`);
+        console.log(` => [LIB: redisSubscriber] Subscribed to ${count} channel(s).`);
     });
 
     subscriber.on("message", (channel, message) => {
@@ -44,14 +44,14 @@ export const setupRedisSubscriber = (io: Server) => {
             try {
                 const { userId, insight } = JSON.parse(message);
 
-                console.log(`[Socket.IO Subscriber] 📩 Intercepted Redis Pub/Sub message on 'ai-insight-channel'. Emitting 'NEW_AI_INSIGHT' to Socket Room: ${userId}`);
+                console.log(` => [LIB: redisSubscriber] Intercepted Redis Pub/Sub message on 'ai-insight-channel'. Emitting 'NEW_AI_INSIGHT' to Socket Room: ${userId}`);
 
                 // Emit the new insight only to the specific user's room
                 io.to(userId).emit(EVENTS.NEW_AI_INSIGHT, insight);
 
-                console.log(`[Socket.IO Subscriber] 🟢 Successfully delivered AI Insight to client!`);
+                console.log(` => [LIB: redisSubscriber] Successfully delivered AI Insight to client!`);
             } catch (error) {
-                console.error("Error processing Redis pub/sub message:", error);
+                console.error(" => [LIB ERROR: redisSubscriber] Error processing Redis pub/sub message:", error);
             }
         }
     });

@@ -59,5 +59,5 @@ export const enqueueLogForAnalysis = async (
         removeOnFail: false,    // Retain failed jobs for inspection
     });
 
-    console.log(`[BullMQ Queue] Successfully added log ${projectLogId} into queue: ${LOG_QUEUE_NAME}`);
+    console.log(` => [LIB: logQueue] Successfully added log ${projectLogId} into queue: ${LOG_QUEUE_NAME}`);
 };

@@ -5,16 +5,18 @@
  * CORE CONCEPT:
  * "UserPlan" manages the subscription details and resource quotas for each 
  * developer on the Zag platform. It tracks their current plan level, 
- * activation dates, and remaining balances for various platform services.
+ * activation dates, and both total and remaining balances for project creation, 
+ * AI analysis, and log preservation.
  * 
  * Plan Tiers:
- * 1. Hobby: Entry-level plan for individual developers (3 projects, 10 insights, 500 logs).
- * 2. Developer: Pro-tier for growing applications (1000 projects, 500 insights, 2000 logs).
- * 3. Enterprise: Scalable solution for large organizations (5000 projects, 2000 insights, 10000 logs).
+ * 1. Hobby: Entry-level plan for individual developers.
+ * 2. Developer: Pro-tier for growing applications.
+ * 3. Enterprise: Scalable solution for large organizations.
  * 
  * Features:
- * - Dynamic Quota Management: Tracks usage of projects, AI insights, and preserved logs.
- * - Plan Lifecycle: Stores start and end dates for subscription period tracking.
+ * - Dynamic Quota Management: Tracks both total and remaining usage of projects, AI insights, and preserved logs.
+ * - Subscription Lifecycle: Manages start dates, expiry dates, and billing status for accurate service delivery.
+ * - Pricing Model: Stores the current cost associated with the user's active plan.
  */
 
 import mongoose, { Document, Model, Schema } from "mongoose";
@@ -27,6 +29,10 @@ export interface IUserPlan extends Document {
     remainingProjects: number;
     remainingFreeInsights: number;
     remainingPreservedLogs: number;
+    totalProjects: number;
+    totalFreeInsights: number;
+    totalPreservedLogs: number;
+    price: number;
     status: "active" | "expired" | "cancelled";
     createdAt: Date;
     updatedAt: Date;
@@ -78,6 +84,30 @@ const userPlanSchema = new Schema<IUserPlan>({
         type: Number,
         required: true,
         default: 500 // Default for hobby
+    },
+    /** Total number of projects the user can create. */
+    totalProjects: {
+        type: Number,
+        required: true,
+        default: 3 // Default for hobby
+    },
+    /** Total number of AI insights the user can get per month. */
+    totalFreeInsights: {
+        type: Number,
+        required: true,
+        default: 10 // Default for hobby
+    },
+    /** Total number of logs per project that will be preserved for the developer. */
+    totalPreservedLogs: {
+        type: Number,
+        required: true,
+        default: 500 // Default for hobby
+    },
+    /** The price of the plan subscription. */
+    price: {
+        type: Number,
+        required: true,
+        default: 0 // Default for hobby
     },
     /** The current status of the plan subscription. */
     status: {

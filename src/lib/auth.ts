@@ -54,6 +54,10 @@ export const auth = betterAuth({
                         remainingProjects: 3,
                         remainingFreeInsights: 10,
                         remainingPreservedLogs: 500,
+                        totalProjects: 3,
+                        totalFreeInsights: 10,
+                        totalPreservedLogs: 500,
+                        price: 0,
                         status: "active"
                     });
 

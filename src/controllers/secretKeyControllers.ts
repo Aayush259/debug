@@ -16,6 +16,8 @@
  *    keys belonging to their own account.
  * 4. Token Visibility: Manages the secure display and deletion of 
  *    sensitive API keys.
+ * 5. Quota Enforcement: Integrates with `UserPlan` to enforce project 
+ *    limits and manage remaining project balance.
  * 
  * Consumer:
  * - These functions are exclusively called by the dashboard internal 
@@ -27,12 +29,14 @@
 
 import { Request, Response } from "express";
 import { SecretKey } from "../models/secretKeyModel.js";
+import { UserPlan } from "../models/userPlan.js";
 
 /**
- * Generates a new secret key for the authenticated user.
+ * Generates a new secret key for the authenticated user and decrements 
+ * the project quota in the UserPlan.
  * @param req - Express request object
  * @param res - Express response object
- * @returns JSON response with the generated secret key
+ * @returns JSON response with the generated secret key or quota error
  */
 export const generateSecretKey = async (req: Request, res: Response) => {
     try {
@@ -47,6 +51,18 @@ export const generateSecretKey = async (req: Request, res: Response) => {
         if (!user) {
             return res.status(401).json({ error: "Unauthorized" });
         }
+
+        const userPlan = await UserPlan.findOne({ user: user.id });
+
+        if (!userPlan || userPlan.remainingProjects <= 0) {
+            return res.status(400).json({
+                status: "error",
+                message: "You have reached the maximum number of projects allowed on your current plan."
+            });
+        }
+
+        userPlan.remainingProjects -= 1;
+        await userPlan.save();
 
         const key = crypto.randomUUID();
 
@@ -71,7 +87,7 @@ export const generateSecretKey = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error("Error generating secret key:", error);
+        console.error(" => [API ERROR: generateSecretKey]", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -125,7 +141,7 @@ export const updateSecretKey = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error("Error updating secret key:", error);
+        console.error(" => [API ERROR: updateSecretKey]", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -152,7 +168,7 @@ export const getAllSecretKeys = async (req: Request, res: Response) => {
             data: secretKeys
         });
     } catch (error) {
-        console.error("Error retrieving secret keys:", error);
+        console.error(" => [API ERROR: getAllSecretKeys]", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
@@ -188,16 +204,16 @@ export const getSecretKeyById = async (req: Request, res: Response) => {
             data: secretKey
         });
     } catch (error) {
-        console.error("Error retrieving secret key:", error);
+        console.error(" => [API ERROR: getSecretKeyById]", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }
 
 /**
- * Deletes a secret key.
+ * Deletes a secret key and increments the project quota in the UserPlan.
  * @param req - Express request object
  * @param res - Express response object
- * @returns JSON response with the deleted secret key
+ * @returns JSON response indicating success or failure
  */
 export const deleteSecretKey = async (req: Request, res: Response) => {
     try {
@@ -220,12 +236,21 @@ export const deleteSecretKey = async (req: Request, res: Response) => {
 
         await secretKey.deleteOne();
 
+        const userPlan = await UserPlan.findOne({ user: user.id });
+
+        if (!userPlan) {
+            return res.status(404).json({ error: "User plan not found" });
+        }
+
+        userPlan.remainingProjects += 1;
+        await userPlan.save();
+
         return res.status(200).json({
             status: "success",
             message: "Secret key deleted successfully"
         });
     } catch (error) {
-        console.error("Error deleting secret key:", error);
+        console.error(" => [API ERROR: deleteSecretKey]", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 }

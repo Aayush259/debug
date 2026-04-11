@@ -45,10 +45,10 @@ class MailService {
                 subject,
                 html,
             });
-            console.log(`[MailService] ✅ Email sent: ${info.messageId}`);
+            console.log(` => [LIB: mailService] Email sent: ${info.messageId}`);
             return info;
         } catch (error) {
-            console.error(`[MailService] ❌ Error sending email:`, error);
+            console.error(` => [LIB ERROR: mailService] Error sending email:`, error);
             throw error;
         }
     }

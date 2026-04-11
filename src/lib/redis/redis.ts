@@ -35,9 +35,9 @@ const redisOptions = {
 export const connection = new Redis(redisOptions);
 
 connection.on("connect", () => {
-    console.log("Connected to Redis successfully.");
+    console.log(" => [LIB: redis] Connected to Redis successfully.");
 });
 
 connection.on("error", (error) => {
-    console.error("Redis connection error:", error);
+    console.error(" => [LIB ERROR: redis] Redis connection error:", error);
 });

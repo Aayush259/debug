@@ -83,9 +83,9 @@ secretKeySchema.post("deleteOne", { document: true, query: false }, async functi
         await mongoose.model("ProjectLogs").deleteMany({ secretKeyId });
         // Delete associated AI insights
         await mongoose.model("LogsDebug").deleteMany({ secretKey: secretKeyId });
-        console.log(`Cascading deletion complete for SecretKey: ${secretKeyId}`);
+        console.log(` => [MODEL: secretKeyModel] Cascading deletion complete for SecretKey: ${secretKeyId}`);
     } catch (error) {
-        console.error("Error in SecretKey cascading deletion:", error);
+        console.error(" => [MODEL ERROR: secretKeyModel] Error in SecretKey cascading deletion:", error);
     }
 });
 

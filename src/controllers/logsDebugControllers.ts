@@ -50,7 +50,7 @@ export const getPendingInsights = async (req: Request, res: Response) => {
             data: secretKeyIds
         });
     } catch (error) {
-        console.error("Error fetching pending AI insights:", error);
+        console.error(" => [API ERROR: getPendingInsights]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
@@ -100,7 +100,7 @@ export const getInsightsBySecretKeyId = async (req: Request, res: Response) => {
             hasMore
         });
     } catch (error) {
-        console.error("Error fetching AI insights by project log ID:", error);
+        console.error(" => [API ERROR: getInsightsBySecretKeyId]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
@@ -140,7 +140,7 @@ export const markInsightAsResolved = async (req: Request, res: Response) => {
             data: insight
         });
     } catch (error) {
-        console.error("Error marking AI insight as resolved:", error);
+        console.error(" => [API ERROR: markInsightAsResolved]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
@@ -190,7 +190,7 @@ export const getHistoryInsights = async (req: Request, res: Response) => {
             hasMore
         });
     } catch (error) {
-        console.error("Error fetching AI insights history:", error);
+        console.error(" => [API ERROR: getHistoryInsights]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }

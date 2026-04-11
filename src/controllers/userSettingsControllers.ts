@@ -89,7 +89,7 @@ export const getUserSettings = async (req: Request, res: Response) => {
             models: allModels
         });
     } catch (error) {
-        console.error("Error fetching user settings:", error);
+        console.error(" => [API ERROR: getUserSettings]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
@@ -205,7 +205,7 @@ export const updateUserSettings = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.error("Error updating user settings:", error);
+        console.error(" => [API ERROR: updateUserSettings]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }

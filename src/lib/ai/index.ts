@@ -58,7 +58,7 @@ export const generateLogExplanation = async (params: GenerateExplanationParams) 
                 severity: parsed.severity || "low"
             };
         } catch (parseError) {
-            console.error("JSON Parse Error:", parseError, "Original text:", text);
+            console.error(" => [LIB ERROR: generateLogExplanation] JSON Parse Error:", parseError, "Original text:", text);
             return {
                 explanation: text, // Fallback to raw text if parsing fails
                 solution: null,
@@ -66,7 +66,7 @@ export const generateLogExplanation = async (params: GenerateExplanationParams) 
             };
         }
     } catch (error: any) {
-        console.error("AI Explanation Generation Error:", error);
+        console.error(" => [LIB ERROR: generateLogExplanation] AI Explanation Generation Error:", error);
 
         // Return a helpful error message for the UI if it's a known issue
         if (error.message?.includes("API key")) {

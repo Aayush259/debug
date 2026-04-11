@@ -33,6 +33,7 @@ Zag uses a hashed-token strategy (similar to GitHub Personal Access Tokens) to b
 ![Project Tokenization](../images/project_tokenization.png)
 
 - **UUID Generation:** Uses `crypto.randomUUID()` to ensure collision-resistant, 128-bit project tokens.
+- **Quota Validation:** Before generation, the system validates the user's `remainingProjects` count against the `totalProjects` limit defined in their `UserPlan`. If the limit is reached, key generation is blocked.
 - **One-Way Hashing:** The `SecretKey` model utilizes an asynchronous `pre-save` middleware to hash the `key` field with `bcrypt` (Salt Rounds: 10).
 - **Validation:** During ingestion, the platform performs a `bcrypt.compare` between the incoming raw token and the stored hash. This ensures that even a full database leak would not reveal the actual API keys used by developers.
 

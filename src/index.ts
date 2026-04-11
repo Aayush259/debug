@@ -113,5 +113,5 @@ setupRedisSubscriber(io); // Attach custom AI insight Redis subscriber to Socket
 
 server.listen(config.port, async () => {
     await connectDB();
-    console.log("Server running on port", config.port);
+    console.log(" > Server running on port", config.port);
 });

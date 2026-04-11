@@ -38,7 +38,7 @@ export function encrypt(text: string): string {
         encrypted = Buffer.concat([encrypted, cipher.final()]);
         return iv.toString("hex") + ":" + encrypted.toString("hex");
     } catch (error) {
-        console.error("Encryption error", error);
+        console.error(" => [LIB ERROR: encrypt]", error);
         return text;
     }
 }
@@ -59,7 +59,7 @@ export function decrypt(text: string): string {
         return decrypted.toString();
     } catch (error) {
         // If decryption fails, it might not be encrypted or encrypted with a different key
-        console.error("Decryption error", error);
+        console.error(" => [LIB ERROR: decrypt]", error);
         return text; // Return as is for graceful failure
     }
 }

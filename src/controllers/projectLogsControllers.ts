@@ -28,6 +28,7 @@ import { SecretKey } from "../models/secretKeyModel";
 import { EVENTS } from "../lib/utils.js";
 import { classifyLog } from "../lib/logClassifier.js";
 import { enqueueLogForAnalysis } from "../lib/queue/logQueue.js";
+import { UserPlan } from "../models/userPlan.js";
 
 /**
  * Retrieves all logs for a specific project.
@@ -107,7 +108,7 @@ export const getProjectLogs = async (req: Request, res: Response) => {
             hasMore
         });
     } catch (error) {
-        console.error("Error fetching project logs:", error);
+        console.error(" => [API ERROR: getProjectLogs]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
@@ -143,7 +144,7 @@ export const getLogDetails = async (req: Request, res: Response) => {
             data: log
         });
     } catch (error) {
-        console.error("Error fetching log details:", error);
+        console.error(" => [API ERROR: getLogDetails]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
@@ -183,7 +184,7 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
             return res.status(401).json({ status: "error", message: "Invalid secret key" });
         }
 
-        console.log(`[Ingestion API] Received ${logs.length} logs from project: ${keyId}`);
+        console.log(` => [API: saveProjectLogs] Received ${logs.length} logs from project: ${keyId}`);
 
         // Process incoming logs
         const processedLogs = logs.map((logItem: any) => {
@@ -232,6 +233,12 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
         // Insert into database
         const savedLogs = await ProjectLogs.insertMany(processedLogs);
 
+        // Atomically decrement the remaining preserved logs count for the user
+        await UserPlan.findOneAndUpdate(
+            { user: secretKey.user },
+            { $inc: { remainingPreservedLogs: -processedLogs.length } }
+        );
+
         // Send logs via Socket.IO
         const io = req.app.get("io");
         if (io) {
@@ -241,13 +248,13 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
         // Push errors and warnings to the AI background queue
         savedLogs.forEach((logItem) => {
             if (logItem.level === 'error' || logItem.level === 'warn') {
-                console.log(`[Ingestion API] Flagged ${logItem.level} log for AI processing. Triggering queue for ID: ${logItem._id.toString()}`);
+                console.log(` => [API: saveProjectLogs] Flagged ${logItem.level} log for AI processing. Triggering queue for ID: ${logItem._id.toString()}`);
                 enqueueLogForAnalysis(
                     logItem._id.toString(),
                     logItem.secretKeyId.toString(),
                     logItem.user.toString(),
                     logItem.log
-                ).catch(err => console.error("[Ingestion API] Failed to enqueue log for AI analysis:", err));
+                ).catch(err => console.error(" => [API: saveProjectLogs] Failed to enqueue log for AI analysis:", err));
             }
         });
 
@@ -256,7 +263,7 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
             message: "Logs saved successfully"
         });
     } catch (error) {
-        console.log(error);
+        console.error(" => [API ERROR: saveProjectLogs]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
