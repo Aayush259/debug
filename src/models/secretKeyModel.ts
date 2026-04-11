@@ -17,9 +17,19 @@
  */
 
 import bcrypt from "bcryptjs";
-import mongoose from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 
-const secretKeySchema = new mongoose.Schema({
+export interface ISecretKey extends Document {
+    projectName: string;
+    key: string;
+    user: mongoose.Types.ObjectId;
+    image?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    compareKey(key: string): Promise<boolean>;
+}
+
+const secretKeySchema = new Schema<ISecretKey>({
     /** The name of the project this key is assigned to. */
     projectName: {
         type: String,
@@ -32,7 +42,7 @@ const secretKeySchema = new mongoose.Schema({
     },
     /** Reference to the developer (User) who owns this project/key. */
     user: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
@@ -58,8 +68,25 @@ secretKeySchema.pre("save", async function () {
  * @param {string} key - The raw API key provided by the client's application.
  * @returns {Promise<boolean>} True if the key is valid, false otherwise.
  */
-secretKeySchema.methods.compareKey = async function (key: string) {
+secretKeySchema.methods.compareKey = async function (key: string): Promise<boolean> {
     return await bcrypt.compare(key, this.key);
 }
 
-export const SecretKey = mongoose.models.SecretKey || mongoose.model("SecretKey", secretKeySchema);
+/**
+ * Middleware: Cascading deletion.
+ * Deletes all associated ProjectLogs and LogsDebug insights when a SecretKey is deleted.
+ */
+secretKeySchema.post("deleteOne", { document: true, query: false }, async function (doc) {
+    try {
+        const secretKeyId = doc._id;
+        // Delete associated project logs
+        await mongoose.model("ProjectLogs").deleteMany({ secretKeyId });
+        // Delete associated AI insights
+        await mongoose.model("LogsDebug").deleteMany({ secretKey: secretKeyId });
+        console.log(`Cascading deletion complete for SecretKey: ${secretKeyId}`);
+    } catch (error) {
+        console.error("Error in SecretKey cascading deletion:", error);
+    }
+});
+
+export const SecretKey: Model<ISecretKey> = mongoose.models.SecretKey || mongoose.model<ISecretKey>("SecretKey", secretKeySchema);

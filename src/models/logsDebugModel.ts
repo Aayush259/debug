@@ -14,24 +14,36 @@
  * 4. RESOLUTION: The developer reviews the insight on the console and marks it as "resolved".
  */
 
-import mongoose from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 
-const logsDebugSchema = new mongoose.Schema({
+export interface ILogsDebug extends Document {
+    projectLogId: mongoose.Types.ObjectId;
+    secretKey: mongoose.Types.ObjectId;
+    user: mongoose.Types.ObjectId;
+    explanation: string;
+    solution?: string | null;
+    severity: "high" | "medium" | "low";
+    status: "pending" | "resolved";
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const logsDebugSchema = new Schema<ILogsDebug>({
     /** Reference to the specific log entry that triggered this AI analysis. */
     projectLogId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "ProjectLogs",
         required: true
     },
     /** Reference to the SecretKey associated with the originating project. */
     secretKey: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "SecretKey",
         required: true
     },
     /** Reference to the developer (User) who owns the project. */
     user: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
@@ -59,4 +71,4 @@ const logsDebugSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-export const LogsDebug = mongoose.models.LogsDebug || mongoose.model("LogsDebug", logsDebugSchema, "logsDebug");
+export const LogsDebug: Model<ILogsDebug> = mongoose.models.LogsDebug || mongoose.model<ILogsDebug>("LogsDebug", logsDebugSchema, "logsDebug");

@@ -9,14 +9,16 @@
  * Workflow:
  * 1. Ingestion & Deduplication: Receives logs from the queue and checks for 
  *    identical existing insights to avoid redundant AI costs.
- * 2. Secret Decryption: Retrieves the user's encrypted AI provider keys and 
+ * 2. Settings Check: Verifies user preferences to determine if AI analysis 
+ *    and email notifications are enabled.
+ * 3. Secret Decryption: Retrieves the user's encrypted AI provider keys and 
  *    decrypts them for secure use.
- * 3. AI Analysis: Communicates with external AI providers (OpenAI, Anthropic) 
- *    to generate explanations and solutions.
- * 4. Persistence & Distribution: Saves the insight to the database and 
+ * 4. AI Analysis: (Optional) Communicates with external AI providers (OpenAI, 
+ *    Anthropic) to generate explanations and solutions if enabled in settings.
+ * 5. Persistence & Distribution: Saves the insight to the database and 
  *    triggers real-time notifications via Redis Pub/Sub.
- * 5. Notifications: Sends email alerts for critical issues discovered during 
- *    analysis.
+ * 6. Notifications: (Optional) Sends email alerts for critical issues discovered 
+ *    during analysis if enabled in settings.
  * 
  * Infrastructure:
  * - Powered by `BullMQ` for robust, scalable background processing.
@@ -26,167 +28,90 @@
 import { Worker, Job } from "bullmq";
 import { connection } from "../redis/redis.js";
 import { LOG_QUEUE_NAME } from "../queue/logQueue.js";
-import { UserSettings } from "../../models/userSettings.js";
 import { LogsDebug } from "../../models/logsDebugModel.js";
-import { ProjectLogs } from "../../models/projectLogsModel.js";
-import { generateLogExplanation } from "../ai/index.js";
-import { decrypt } from "../encryption.js";
-import { User } from "../../models/userModel.js";
-import { mailService } from "../services/mailService.js";
-import config from "../../config/config.js";
+import { logWorkerService } from "../services/logWorkerService.js";
+import { UserSettings } from "../../models/userSettings.js";
 
 export const logWorker = new Worker<ProcessLogJobData>(
     LOG_QUEUE_NAME,
     async (job: Job<ProcessLogJobData>) => {
         const { projectLogId, secretKeyId, userId, logContent } = job.data;
-        console.log(`\n======================================================`);
-        console.log(`[AI Worker] 🚀 Started processing job ${job.id} for projectLogId: ${projectLogId}`);
+        console.log(` => [LOG WORKER] Started processing job ${job.id} for projectLogId: ${projectLogId} for user: ${userId}`);
 
         try {
-            const sendInsightEmail = async (insight: any) => {
-                try {
-                    const user = await User.findById(userId);
-                    if (user && user.email) {
-                        const projectName = (insight.secretKey as any).projectName || "Unknown Project";
-                        const appLink = `${config.frontend_url}/console/projects/${secretKeyId}`;
-                        const glimpse = insight.explanation.length > 150
-                            ? insight.explanation.substring(0, 150) + "..."
-                            : insight.explanation;
+            let debugInsight;
 
-                        console.log(`[AI Worker] 📧 Sending AI Insight email to: ${user.email}`);
-                        await mailService.sendAIInsightEmail({
-                            email: user.email,
-                            name: user.name,
-                            projectName,
-                            errorMessage: logContent,
-                            insightGlimpse: glimpse,
-                            appLink
-                        });
-                    }
-                } catch (mailError) {
-                    console.error(`[AI Worker] ❌ Failed to send email notification:`, mailError);
-                }
-            };
+            const userSettings = await UserSettings.findOne({ user: userId });
 
-            // 0. Check if the exact same error already has an insight
-            console.log(`[AI Worker] 🔍 Checking for existing identical insights...`);
-            const existingLogs = await ProjectLogs.find({
-                log: logContent,
-                secretKeyId,
-                _id: { $ne: projectLogId }
-            }).sort({ createdAt: -1 }).limit(10);
 
-            let existingInsight = null;
-            for (const prevLog of existingLogs) {
-                existingInsight = await LogsDebug.findOne({ projectLogId: prevLog._id });
+            // PHASE 1: AI Insight Generation
+            // Check if user has enabled AI-powered analysis in their settings
+            if (userSettings?.aiInsightsEnabled) {
+                const existingInsight = await logWorkerService.checkExistingLog({ secretKeyId, projectLogId, logContent });
+
                 if (existingInsight) {
-                    break;
+                    // Logic for reusing existing insights to save costs
+                    debugInsight = await LogsDebug.create({
+                        projectLogId,
+                        secretKey: secretKeyId,
+                        user: userId,
+                        explanation: existingInsight.explanation,
+                        solution: existingInsight.solution,
+                        severity: existingInsight.severity
+                    });
+                } else {
+                    // Request new analysis from the configured AI provider
+                    const aiResponse = await logWorkerService.getAiInsight({ userId, logContent });
+
+                    if (!aiResponse) {
+                        throw new Error("Failed to generate AI insight");
+                    }
+
+                    debugInsight = await LogsDebug.create({
+                        projectLogId,
+                        secretKey: secretKeyId,
+                        user: userId,
+                        explanation: aiResponse.explanation,
+                        solution: aiResponse.solution,
+                        severity: aiResponse.severity
+                    });
                 }
-            }
-
-            if (existingInsight) {
-                console.log(`[AI Worker] ♻️ Found existing insight for identical error. Duplicating...`);
-
-                // Save to LogsDebug Collection (Duplicated)
-                const debugInsight = await LogsDebug.create({
-                    projectLogId,
-                    secretKey: secretKeyId,
-                    user: userId,
-                    explanation: existingInsight.explanation,
-                    solution: existingInsight.solution,
-                    severity: existingInsight.severity
-                });
 
                 await debugInsight.populate("secretKey", "-key");
 
-                console.log(`[AI Worker] 💾 Saved Duplicated AI Insight to LogsDebug collection for ID: ${projectLogId}`);
-
-                // Trigger Socket event via Redis Pub/Sub
-                console.log(`[AI Worker] 📡 Publishing Insight to Redis Pub/Sub channel 'ai-insight-channel' for User: ${userId}`);
+                // Trigger real-time dashboard updates via Redis Pub/Sub
+                console.log(` => [LOG WORKER] Publishing Insight to Redis Pub/Sub channel 'ai-insight-channel' for User: ${userId}`);
                 await connection.publish("ai-insight-channel", JSON.stringify({
                     userId: userId.toString(),
                     insight: debugInsight
                 }));
-
-                await sendInsightEmail(debugInsight);
-
-                return debugInsight;
+            } else {
+                console.log(` => [LOG WORKER] AI Insights disabled for user: ${userId}. Skipping analysis.`);
             }
 
-            // 1. Fetch user's AI preferences
-            const userSettings = await UserSettings.findOne({ user: userId });
-            if (!userSettings) {
-                console.warn(`No user settings found for user: ${userId}`);
-                return;
+            // PHASE 2: Email Notifications
+            // Send an email alert only if the user has opted in for error log notifications
+            if (userSettings?.emailErrorLogs) {
+                // Note: debugInsight may be undefined if AI analysis was skipped or failed
+                await logWorkerService.sendInsightMail({ userId, secretKeyId, insight: debugInsight, logContent });
             }
-
-            const provider = userSettings.modelProvider as AIProvider;
-            const modelName = userSettings.model;
-            // The API keys are stored encrypted in the database
-            const encryptedApiKey = userSettings.apiKeys?.[provider];
-
-            if (!encryptedApiKey) {
-                console.warn(`No API key configured for provider: ${provider} for user: ${userId}`);
-                return;
-            }
-
-            const apiKey = decrypt(encryptedApiKey);
-
-            // 2. Query the AI Service
-            const metadata = { source: "debug-worker" };
-
-            console.log(`[AI Worker] 🤖 Querying AI Provider: ${provider} (Model: ${modelName})...`);
-
-            const aiResponse = await generateLogExplanation({
-                provider,
-                modelName,
-                apiKey,
-                log: logContent,
-                metadata
-            });
-
-            console.log(`[AI Worker] ✅ Received generated insight from AI.`);
-
-            // 3. Save to LogsDebug Collection
-            const debugInsight = await LogsDebug.create({
-                projectLogId,
-                secretKey: secretKeyId,
-                user: userId,
-                explanation: aiResponse.explanation,
-                solution: aiResponse.solution,
-                severity: aiResponse.severity
-            });
-
-            await debugInsight.populate("secretKey", "-key");
-
-            console.log(`[AI Worker] 💾 Saved AI Insight to LogsDebug collection for ID: ${projectLogId}`);
-
-            // 4. Trigger Socket event via Redis Pub/Sub
-            console.log(`[AI Worker] 📡 Publishing Insight to Redis Pub/Sub channel 'ai-insight-channel' for User: ${userId}`);
-            await connection.publish("ai-insight-channel", JSON.stringify({
-                userId: userId.toString(),
-                insight: debugInsight
-            }));
-
-            // 5. Send Email Notification
-            await sendInsightEmail(debugInsight);
 
             return debugInsight;
         } catch (error) {
-            console.error(`Error processing job ${job.id}:`, error);
-            throw error; // Let BullMQ handle the error/retry
+            console.error(` => [LOG WORKER] Error processing job ${job.id}:`, error);
+            throw error;
         }
     },
     {
-        connection: connection as any, // Cast to any to bypass ioredis vs ioredis type mismatch in bullmq
-        concurrency: 5, // Process up to 5 logs concurrently
+        connection: connection as any,
+        concurrency: 5,
     }
 );
 
 logWorker.on('completed', (job) => {
-    console.log(`Job ${job.id} completed successfully.`);
+    console.log(` => [LOG WORKER: COMPLETED] Job ${job.id} completed successfully.`);
 });
 
 logWorker.on('failed', (job, err) => {
-    console.error(`Job ${job?.id} failed with error: ${err.message}`);
+    console.error(` => [LOG WORKER: FAILED] Job ${job?.id} failed with error: ${err.message}`);
 });

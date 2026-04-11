@@ -17,9 +17,18 @@
  * workflow for their respective software products.
  */
 
-import mongoose from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 
-const userSchema = new mongoose.Schema({
+export interface IUser extends Document {
+    name: string;
+    email: string;
+    emailVerified: boolean;
+    image?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const userSchema = new Schema<IUser>({
     name: {
         type: String,
         required: true,
@@ -40,4 +49,4 @@ const userSchema = new mongoose.Schema({
     timestamps: true,
 });
 
-export const User = mongoose.models.User || mongoose.model("User", userSchema, "user");
+export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>("User", userSchema, "user");

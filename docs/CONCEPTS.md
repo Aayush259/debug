@@ -27,6 +27,9 @@ Configuration that determines which AI models are used to process logs and how t
     - **Model Selection:** Specify the version of the AI model (e.g., `gemini-2.0-flash`).
     - **API Key Management:** Storage for user-provided API keys.
     - **Quota Management:** Toggle between using Zag's free tier quota or personal API keys.
+    - **Feature Toggles:**
+        - `aiInsightsEnabled`: Globally enable/disable AI-powered log analysis.
+        - `emailErrorLogs`: Toggle email notifications for critical error logs.
 
 ## 3. LogsDebug (AI Insight)
 A **LogsDebug** entry is the intelligence layer of the Zag platform.

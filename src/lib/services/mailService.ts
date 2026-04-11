@@ -10,6 +10,7 @@
  * Responsibilities:
  * 1. Proactive Alerts: Delivering "AI Insight" notifications directly to the 
  *    user's inbox when a significant issue is detected in their application.
+ *    (Note: This is subject to user settings for AI insights and email alerts).
  * 2. Templating: Constructing rich HTML email content (like the AI Insight 
  *    alert) using modern CSS-in-HTML techniques for maximum compatibility.
  * 
@@ -52,20 +53,33 @@ class MailService {
         }
     }
 
+    /**
+     * sendAIInsightEmail
+     * Sends a rich HTML email to the developer containing error details and 
+     * (optionally) an AI-generated insight and solution preview.
+     * 
+     * @param {Object} params - The email parameters.
+     * @param {string} params.email - Recipient's email address.
+     * @param {string} params.name - Recipient's name.
+     * @param {string} params.projectName - Name of the project where the error occurred.
+     * @param {string} params.errorMessage - The raw error message or stack trace.
+     * @param {string} params.appLink - Direct link to the dashboard for this error.
+     * @param {string} [params.insightGlimpse] - Optional. A short preview of the AI insight. This is only included if AI insights are enabled in settings.
+     */
     async sendAIInsightEmail({
         email,
         name,
         projectName,
         errorMessage,
+        appLink,
         insightGlimpse,
-        appLink
     }: {
         email: string;
         name: string;
         projectName: string;
         errorMessage: string;
-        insightGlimpse: string;
         appLink: string;
+        insightGlimpse?: string;
     }) {
         const subject = `Error Log Detected in ${projectName} - Action Required`;
         const html = `
@@ -87,26 +101,39 @@ class MailService {
                         <pre style="margin: 0; color: #7f1d1d; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all;">${errorMessage}</pre>
                     </div>
 
-                    <div style="background-color: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 32px;">
-                        <h4 style="margin-top: 0; margin-bottom: 8px; color: #374151; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Insight Preview</h4>
-                        <p style="margin: 0; color: #1f2937; font-size: 15px; line-height: 1.6;">${insightGlimpse}</p>
-                    </div>
+                    ${insightGlimpse ? (`
+                        <div style="background-color: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 32px;">
+                            <h4 style="margin-top: 0; margin-bottom: 8px; color: #374151; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Insight Preview</h4>
+                            <p style="margin: 0; color: #1f2937; font-size: 15px; line-height: 1.6;">${insightGlimpse}</p>
+                        </div>
+    
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-bottom: 32px;">
+                            <tr>
+                                <td align="center">
+                                    <a href="${appLink}" style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 14px 28px; font-size: 16px; font-weight: 500; text-decoration: none; border-radius: 6px; text-align: center;">
+                                        View Full Solution
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    `) : (`
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-bottom: 32px;">
+                            <tr>
+                                <td align="center">
+                                    <a href="${appLink}" style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 14px 28px; font-size: 16px; font-weight: 500; text-decoration: none; border-radius: 6px; text-align: center;">
+                                        See in console
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    `)}
 
-                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-bottom: 32px;">
-                        <tr>
-                            <td align="center">
-                                <a href="${appLink}" style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 14px 28px; font-size: 16px; font-weight: 500; text-decoration: none; border-radius: 6px; text-align: center;">
-                                    View Full Solution
-                                </a>
-                            </td>
-                        </tr>
-                    </table>
 
                     <hr style="border: 0; border-top: 1px solid #eaeaea; margin-bottom: 24px;">
                     
                     <p style="margin: 0; color: #9ca3af; font-size: 14px; line-height: 1.5; text-align: center;">
-                        This is an automated notification from Zag.<br>
-                        Visit your project console to configure alert settings.
+                        This is an automated mail from Zag.<br>
+                        Visit your platform console to configure alert settings.
                     </p>
                 </div>
             </div>

@@ -127,7 +127,7 @@ export const markInsightAsResolved = async (req: Request, res: Response) => {
         const insight = await LogsDebug.findOneAndUpdate(
             { _id: id, user: user.id },
             { status: "resolved" },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!insight) {

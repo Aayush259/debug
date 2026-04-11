@@ -19,6 +19,9 @@ import { db } from "./database/db.js";
 import config from "../config/config.js";
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { customSession } from "better-auth/plugins";
+import { UserPlan } from "../models/userPlan.js";
+import { UserSettings } from "../models/userSettings.js";
 
 /**
  * auth
@@ -37,5 +40,36 @@ export const auth = betterAuth({
             clientId: config.google_client_id,
             clientSecret: config.google_client_secret,
         }
-    }
+    },
+    databaseHooks: {
+        user: {
+            create: {
+                after: async (user) => {
+                    // Initialize UserPlan upon signup
+                    await UserPlan.create({
+                        user: user.id,
+                        planType: "hobby",
+                        planStartDate: new Date(),
+                        planEndDate: null,
+                        remainingProjects: 3,
+                        remainingFreeInsights: 10,
+                        remainingPreservedLogs: 500,
+                        status: "active"
+                    });
+
+                    // Initialize UserSettings upon signup
+                    await UserSettings.create({
+                        user: user.id
+                    });
+                }
+            }
+        }
+    },
+    plugins: [
+        customSession(async ({ user, session }) => {
+            // Still fetch the plan to include it in the session for the frontend
+            const plan = await UserPlan.findOne({ user: user.id });
+            return { session, user, plan };
+        })
+    ]
 })

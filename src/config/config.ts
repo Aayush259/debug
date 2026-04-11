@@ -26,6 +26,10 @@ const config = {
 
     encryption_key: process.env.ENCRYPTION_KEY || "",
 
+    llm_provider: process.env.LLM_PROVIDER || "",
+    llm_model: process.env.LLM_MODEL || "",
+    llm_api_key: process.env.LLM_API_KEY || "",
+
     mail_host: process.env.SMTP_HOST || "",
     mail_port: Number(process.env.SMTP_PORT) || 465,
     mail_user: process.env.SMTP_USER || "",

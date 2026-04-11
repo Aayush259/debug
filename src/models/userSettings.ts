@@ -16,12 +16,28 @@
  *    or the platform's free quota.
  */
 
-import mongoose from "mongoose";
+import mongoose, { Model, Schema } from "mongoose";
 
-const userSettingsSchema = new mongoose.Schema({
+export interface IUserSettings {
+    user: mongoose.Types.ObjectId;
+    modelProvider: string;
+    model: string;
+    apiKeys: {
+        google?: string;
+        openai?: string;
+        anthropic?: string;
+    };
+    useFreeQuota: boolean;
+    aiInsightsEnabled: boolean;
+    emailErrorLogs: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const userSettingsSchema = new Schema<IUserSettings>({
     /** Reference to the developer (User) these settings belong to. */
     user: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "User",
         required: true,
         unique: true
@@ -46,7 +62,17 @@ const userSettingsSchema = new mongoose.Schema({
     useFreeQuota: {
         type: Boolean,
         default: true
+    },
+    /** Flag to determine if the user wants AI insights. */
+    aiInsightsEnabled: {
+        type: Boolean,
+        default: true
+    },
+    /** Flag to determine if the user wants email notifications for error logs. */
+    emailErrorLogs: {
+        type: Boolean,
+        default: true
     }
 }, { timestamps: true });
 
-export const UserSettings = mongoose.models.UserSettings || mongoose.model("UserSettings", userSettingsSchema, "userSettings");
+export const UserSettings: Model<IUserSettings> = mongoose.models.UserSettings || mongoose.model<IUserSettings>("UserSettings", userSettingsSchema, "userSettings");

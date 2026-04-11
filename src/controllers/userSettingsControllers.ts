@@ -44,7 +44,9 @@ const updateUserSettingsSchema = z.object({
         openai: z.string().optional(),
         anthropic: z.string().optional()
     }).optional(),
-    useFreeQuota: z.boolean().optional()
+    useFreeQuota: z.boolean().optional(),
+    aiInsightsEnabled: z.boolean().optional(),
+    emailErrorLogs: z.boolean().optional()
 });
 
 /**
@@ -117,7 +119,7 @@ export const updateUserSettings = async (req: Request, res: Response) => {
             });
         }
 
-        const { modelProvider, model, apiKeys, useFreeQuota } = parsedResult.data;
+        const { modelProvider, model, apiKeys, useFreeQuota, aiInsightsEnabled, emailErrorLogs } = parsedResult.data;
 
         const currentSettings = await UserSettings.findOne({ user: user.id });
 
@@ -175,10 +177,13 @@ export const updateUserSettings = async (req: Request, res: Response) => {
             updateData.apiKeys = keysToUpdate;
         }
 
+        if (aiInsightsEnabled !== undefined) updateData.aiInsightsEnabled = aiInsightsEnabled;
+        if (emailErrorLogs !== undefined) updateData.emailErrorLogs = emailErrorLogs;
+
         const updatedSettings = await UserSettings.findOneAndUpdate(
             { user: user.id },
             { $set: updateData },
-            { new: true, upsert: true }
+            { returnDocument: 'after', upsert: true }
         );
 
         // Decrypt keys before sending back in the response

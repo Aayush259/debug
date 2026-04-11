@@ -14,9 +14,18 @@
  *    which use AI to generate debugging insights (stored in logsDebugModel).
  */
 
-import mongoose from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 
-const projectLogsSchema = new mongoose.Schema({
+export interface IProjectLogs extends Document {
+    log: string;
+    secretKeyId: mongoose.Types.ObjectId;
+    user: mongoose.Types.ObjectId;
+    level: "info" | "warn" | "error";
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const projectLogsSchema = new Schema<IProjectLogs>({
     /** The raw log message or data string captured from the application. */
     log: {
         type: String,
@@ -24,13 +33,13 @@ const projectLogsSchema = new mongoose.Schema({
     },
     /** Reference to the SecretKey used to authorize the transmission of this log. */
     secretKeyId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "SecretKey",
         required: true
     },
     /** Reference to the developer (User) who owns the project that generated this log. */
     user: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
@@ -42,4 +51,4 @@ const projectLogsSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-export const ProjectLogs = mongoose.models.ProjectLogs || mongoose.model("ProjectLogs", projectLogsSchema, "projectLogs");
+export const ProjectLogs: Model<IProjectLogs> = mongoose.models.ProjectLogs || mongoose.model<IProjectLogs>("ProjectLogs", projectLogsSchema, "projectLogs");

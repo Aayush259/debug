@@ -56,7 +56,8 @@ Logs flagged as `warn` or `error` enter the AI pipeline managed by **BullMQ** an
 ![Log-to-Insight Pipeline](../images/log_to_insight.png)
 
 - **Resilience:** Jobs are configured with **3 retry attempts** and **exponential backoff** (1s base).
-- **Deduplication Logic:** To prevent redundant LLM costs, the worker queries the last 10 identical logs for the same project. If an insight already exists for that specific error message, it "clones" the previous explanation and solution instead of re-analyzing.
+- **Settings Check:** Before analysis, the worker verifies if `aiInsightsEnabled` is set to `true` in the `UserSettings`. If disabled, the AI analysis phase is skipped entirely.
+- **Deduplication Logic:** To prevent redundant LLM costs, the worker queries the last 10 identical logs for the same project. If an insight already exists for that specific error message, it "clones" the previous explanation and solution instead of re-analyzing (only if AI insights are enabled).
 
 ### C. Phase 3: AI Analysis & Multi-Model Support
 Zag uses a modular AI layer to interface with various LLMs via the `ai` library.
@@ -66,11 +67,13 @@ Zag uses a modular AI layer to interface with various LLMs via the `ai` library.
 3. **Response Parsing:** The AI's markdown output is parsed via regex to extract the JSON block. A fallback mechanism handles malformed responses by saving the raw text as the "Explanation" and defaulting the severity to "medium".
 
 ### D. Phase 4: Cross-Channel Notification
-Once an insight is persisted, Zag triggers a two-pronged notification flow:
+Once an insight is persisted, Zag triggers a multi-pronged notification flow, subject to user preferences:
 
 1. **Real-time (Redis Pub/Sub):**
+    - Triggered only if `aiInsightsEnabled` is active and an insight was generated.
     - The worker publishes to the `ai-insight-channel`.
-    - A dedicated **Redis Subscriber** (running in the main server process) receives the message and pushes it through the WebSocket to the frontend. This decouples the worker process from the WebSocket server.
+    - A dedicated **Redis Subscriber** (running in the main server process) receives the message and pushes it through the WebSocket to the frontend.
 2. **Off-Platform (Email):**
+    - Triggered only if `emailErrorLogs` is enabled in `UserSettings`.
     - **Nodemailer** constructs a rich HTML email.
-    - It highlights the error, provides a "glimpse" of the AI insight, and includes a link back to the Zag dashboard.
+    - It highlights the error and, if available, provides a "glimpse" of the AI insight with a link back to the Zag dashboard.
