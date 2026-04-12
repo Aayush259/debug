@@ -24,12 +24,15 @@ Configuration that determines which AI models are used to process logs and how t
 - **Frontend naming:** `User Settings`
 - **Key Features:**
     - **Model Provider:** Choose between Google, OpenAI, or Anthropic.
-    - **Model Selection:** Specify the version of the AI model (e.g., `gemini-2.0-flash`).
-    - **API Key Management:** Storage for user-provided API keys.
+    - **Model Selection:** Specify the version of the AI model (e.g., `gemini-flash-latest`).
+    - **API Key Management:** Storage for user-provided API keys (BYOK).
     - **Quota Management:** Toggle between using Zag's free tier quota or personal API keys.
     - **Feature Toggles:**
         - `aiInsightsEnabled`: Globally enable/disable AI-powered log analysis.
         - `emailErrorLogs`: Toggle email notifications for critical error logs.
+- **Plan-Based Restrictions (Hobby Tier):**
+    - The "Hobby" plan is restricted from modifying AI providers, selecting custom models, and using personal API keys. These settings are locked to system defaults (`Google` / `Gemini Flash`).
+    - Email notifications (`emailErrorLogs`) are not supported on the Hobby tier.
 
 ## 3. LogsDebug (AI Insight)
 A **LogsDebug** entry is the intelligence layer of the Zag platform.
@@ -81,4 +84,9 @@ To maintain reliability without exceeding storage limits, Zag implements **First
 ### C. AI Insight Quota
 AI-powered analysis is governed by `remainingFreeInsights`.
 - Users on the free tier have a limited number of "automated" insights.
-- Once this quota is exhausted, logs will still be ingested, but automated AI analysis will pause until the quota resets or the user switches to using their own API keys.
+- Once this quota is exhausted, logs will still be ingested, but automated AI analysis will pause until the quota resets or the user switches to using their own API keys (where supported). For hobby plan, the quota never resets, but for other plans, it gets reset monthly.
+
+### D. Plan-Based Feature Gating
+The Zag platform enforces feature parity based on the user's active subscription tier.
+- **Hobby Plan:** Entry-level tier. Does not support BYOK (Bring Your Own Key) or off-platform email alerts. AI analysis is restricted to the platform's default provider and model.
+- **Developer/Enterprise Plans:** Support full customization of AI providers, personal API key usage, and comprehensive cross-channel notifications.

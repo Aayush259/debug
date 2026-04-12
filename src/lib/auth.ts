@@ -58,6 +58,8 @@ export const auth = betterAuth({
                         totalFreeInsights: 10,
                         totalPreservedLogs: 500,
                         price: 0,
+                        byok: false,
+                        emailAlerts: false,
                         status: "active"
                     });
 

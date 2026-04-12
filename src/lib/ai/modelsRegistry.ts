@@ -90,6 +90,14 @@ export const googleModels: AIModelRegistryItem[] = [
         description: "Fast, cost-efficient Gemini model ideal for real-time interactions and high-throughput use cases.",
     },
     {
+        id: "google/gemini-flash-latest",
+        isActive: "true",
+        createdAt: Date.now(),
+        owned_by: "google",
+        name: "Gemini Flash Latest",
+        description: "General-purpose Gemini model with strong reasoning and coding performance.",
+    },
+    {
         id: "google/gemini-2.0-flash",
         isActive: "true",
         createdAt: Date.now(),

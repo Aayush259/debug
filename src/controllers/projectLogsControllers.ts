@@ -233,7 +233,7 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
         // --- LOG ROTATION & QUOTA MANAGEMENT ---
         // We ensure that users doesn't exceed their preserved logs quota.
         // If the incoming logs push them over the limit, we rotate (delete) the oldest logs.
-        
+
         // Fetch user plan to check for log rotation
         const userPlan = await UserPlan.findOne({ user: secretKey.user });
 
@@ -274,7 +274,6 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
                 { $inc: { remainingPreservedLogs: -newLogsCount } }
             );
         }
-        // --- END LOG ROTATION ---
 
         // Insert into database
         const savedLogs = await ProjectLogs.insertMany(processedLogs);

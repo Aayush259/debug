@@ -47,10 +47,10 @@ const userSettingsSchema = new Schema<IUserSettings>({
         type: String,
         default: "google"
     },
-    /** The specific AI model identifier (e.g., "google/gemini-2.0-flash"). */
+    /** The specific AI model identifier (e.g., "google/gemini-flash-latest"). */
     model: {
         type: String,
-        default: "google/gemini-2.0-flash"
+        default: "google/gemini-flash-latest"
     },
     /** Collection of API keys for various providers, supplied by the user. */
     apiKeys: {

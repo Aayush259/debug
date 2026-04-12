@@ -62,13 +62,16 @@ Logs flagged as `warn` or `error` enter the AI pipeline managed by **BullMQ** an
 
 - **Resilience:** Jobs are configured with **3 retry attempts** and **exponential backoff** (1s base).
 - **Settings Check:** Before analysis, the worker verifies if `aiInsightsEnabled` is set to `true` in the `UserSettings`. If disabled, the AI analysis phase is skipped entirely.
+- **Plan Gating (Notification):** Before constructing the email job, the system checks the `UserPlan` for `emailAlerts` support. Users on the "Hobby" tier are skipped for off-platform notifications.
 - **Deduplication Logic:** To prevent redundant LLM costs, the worker queries the last 10 identical logs for the same project. If an insight already exists for that specific error message, it "clones" the previous explanation and solution instead of re-analyzing (only if AI insights are enabled).
 
 ### C. Phase 3: AI Analysis & Multi-Model Support
 Zag uses a modular AI layer to interface with various LLMs via the `ai` library.
 
 1. **Context Construction:** Combines the raw log with specialized **System Prompts** (`LOG_EXPLAINER`).
-2. **Quota Validation:** Checks `UserPlan.remainingFreeInsights`. If using Zag's free tier and the quota is 0, the analysis is skipped.
+2. **Quota / Plan Validation:** 
+    - **Free Tier:** Checks `UserPlan.remainingFreeInsights`. If zero, the analysis is skipped.
+    - **BYOK Tier:** Checks `UserPlan.planType`. If "Hobby", use of personal keys is blocked even if configured in settings.
 3. **Provider Resolution:** Based on `UserSettings`, instantiates the model (Gemini, GPT-4, etc.) using the decrypted API key.
 4. **Quota Decrement:** Upon successful generation (if using free tier), `remainingFreeInsights` is atomically decremented.
 5. **Response Parsing:** Extracts JSON block from AI output.
@@ -81,8 +84,8 @@ Once an insight is persisted, Zag triggers a multi-pronged notification flow, su
     - The worker publishes to the `ai-insight-channel`.
     - A dedicated **Redis Subscriber** (running in the main server process) receives the message and pushes it through the WebSocket to the frontend.
 2. **Off-Platform (Email):**
-    - Triggered only if `emailErrorLogs` is enabled in `UserSettings`.
-    - **Nodemailer** constructs a rich HTML email.
+    - **Gating:** Triggered only if `emailErrorLogs` is enabled in `UserSettings` **AND** the user's `UserPlan` supports `emailAlerts` (Hobby users are excluded).
+    - **Method:** **Nodemailer** constructs a rich HTML email.
     - It highlights the error and, if available, provides a "glimpse" of the AI insight with a link back to the Zag dashboard.
 
 ---

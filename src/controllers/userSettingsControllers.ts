@@ -29,6 +29,7 @@
 
 import { Request, Response } from "express";
 import { UserSettings } from "../models/userSettings.js";
+import { UserPlan } from "../models/userPlan.js";
 import { encrypt, decrypt } from "../lib/encryption.js";
 import { z } from "zod";
 import { allModels } from "../lib/ai/modelsRegistry.js";
@@ -121,13 +122,39 @@ export const updateUserSettings = async (req: Request, res: Response) => {
 
         const { modelProvider, model, apiKeys, useFreeQuota, aiInsightsEnabled, emailErrorLogs } = parsedResult.data;
 
+        // --- PLAN-BASED FEATURE GATING ---
+        // We fetch the user's plan to enforce tier-specific restrictions.
+        // The "Hobby" plan is restricted from modifying AI providers, personal API keys, 
+        // free quota settings, and advanced notification preferences.
+        const userPlan = await UserPlan.findOne({ user: user.id });
+        const isHobby = userPlan?.planType === "hobby";
+
+        if (isHobby) {
+            const forbiddenFields = [];
+            if (modelProvider !== undefined) forbiddenFields.push("modelProvider");
+            if (model !== undefined) forbiddenFields.push("model");
+            if (apiKeys !== undefined) forbiddenFields.push("apiKeys");
+            if (useFreeQuota !== undefined) forbiddenFields.push("useFreeQuota");
+            if (emailErrorLogs !== undefined) forbiddenFields.push("emailErrorLogs");
+
+            if (forbiddenFields.length > 0) {
+                console.log(` => [API: updateUserSettings] Hobby user ${user.id} attempted to modify restricted fields: ${forbiddenFields.join(", ")}`);
+                return res.status(403).json({
+                    status: "error",
+                    message: "Plan restriction",
+                    errors: {
+                        plan: `The following settings are not available for modification on the Hobby plan: ${forbiddenFields.join(", ")}. Please upgrade your plan to unlock these features.`
+                    }
+                });
+            }
+        }
+
         const currentSettings = await UserSettings.findOne({ user: user.id });
 
         const finalModelProvider = modelProvider !== undefined ? modelProvider : (currentSettings?.modelProvider || "google");
         const finalModel = model !== undefined ? model : (currentSettings?.model || "gemini-1.5-flash");
         const finalUseFreeQuota = useFreeQuota !== undefined ? useFreeQuota : (currentSettings?.useFreeQuota ?? true);
 
-        // let validModels = await fetchAvailableModels();
         let validModels = allModels;
 
         const isValidModel = validModels.some(m => m.id === finalModel && m.owned_by === finalModelProvider);

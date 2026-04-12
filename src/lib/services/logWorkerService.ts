@@ -19,7 +19,7 @@
 import config from "../../config/config";
 import { ILogsDebug, LogsDebug } from "../../models/logsDebugModel";
 import { ProjectLogs } from "../../models/projectLogsModel";
-import { ISecretKey, SecretKey } from "../../models/secretKeyModel";
+import { SecretKey } from "../../models/secretKeyModel";
 import { User } from "../../models/userModel";
 import { generateLogExplanation } from "../ai";
 import { mailService } from "./mailService";
@@ -46,6 +46,15 @@ class LogWorkerService {
         try {
             const user = await User.findById(userId);
             if (user && user.email) {
+                // We check the user's plan to determine if they are entitled to off-platform alerts.
+                // The "Hobby" plan does not include email notifications for AI insights.
+                const userPlan = await UserPlan.findOne({ user: userId });
+
+                if (!userPlan || userPlan.planType === "hobby") {
+                    console.log(` => [LOG WORKER SERVICE:sendInsightMail] User ${userId} is on hobby plan, skipping email notification`);
+                    return;
+                }
+
                 const project = await SecretKey.findById(secretKeyId);
                 const projectName = project?.projectName || "Unknown Project";
                 const appLink = `${config.frontend_url}/console/projects/${secretKeyId}`;
@@ -125,17 +134,40 @@ class LogWorkerService {
             return;
         }
 
+        const userPlan = await UserPlan.findOne({ user: userId });
+
+        if (!userPlan) {
+            console.log(` => [LOG WORKER SERVICE:getAiInsight] No user plan found for user: ${userId}`);
+            return;
+        }
+
         let provider: AIProvider;
         let modelName: string;
         let apiKey: string;
 
         if (userSettings.useFreeQuota) {
             console.log(" => [LOG WORKER SERVICE:getAiInsight] Using free quota for user: ", userId);
+
+            // --- QUOTA GATE ---
+            // Verify if the user has any free AI insight credits remaining for the current period.
+            if (userPlan.remainingFreeInsights <= 0) {
+                console.log(` => [LOG WORKER SERVICE:getAiInsight] No free insights remaining for user: ${userId}`);
+                return;
+            }
+            // --- END QUOTA GATE ---
+
             apiKey = config.llm_api_key;
             provider = config.llm_provider as AIProvider;
             modelName = config.llm_model;
         } else {
-            console.log(" => [LOG WORKER SERVICE:getAiInsight] Using paid quota for user: ", userId);
+            console.log(" => [LOG WORKER SERVICE:getAiInsight] Using BYOK for user: ", userId);
+
+            // Modification of AI providers and use of personal API keys (BYOK) is a premium feature not available to the "Hobby" tier.
+            if (userPlan.planType === "hobby") {
+                console.log(` => [LOG WORKER SERVICE:getAiInsight] User ${userId} is on hobby plan, skipping AI analysis`);
+                return;
+            }
+
             provider = userSettings.modelProvider as AIProvider;
             modelName = userSettings.model;
             // The API keys are stored encrypted in the database

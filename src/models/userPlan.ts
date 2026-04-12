@@ -33,6 +33,8 @@ export interface IUserPlan extends Document {
     totalFreeInsights: number;
     totalPreservedLogs: number;
     price: number;
+    byok: boolean;
+    emailAlerts: boolean;
     status: "active" | "expired" | "cancelled";
     createdAt: Date;
     updatedAt: Date;
@@ -108,6 +110,22 @@ const userPlanSchema = new Schema<IUserPlan>({
         type: Number,
         required: true,
         default: 0 // Default for hobby
+    },
+    /** 
+     * Flag to determine if the user is allowed to use their own API keys (Bring Your Own Key).
+     * This is typically disabled for the Hobby plan.
+     */
+    byok: {
+        type: Boolean,
+        default: false
+    },
+    /** 
+     * Flag to determine if the user's plan supports off-platform email alerts for error logs.
+     * This is typically disabled for the Hobby plan.
+     */
+    emailAlerts: {
+        type: Boolean,
+        default: false
     },
     /** The current status of the plan subscription. */
     status: {
