@@ -25,6 +25,7 @@ import { generateLogExplanation } from "../ai";
 import { mailService } from "./mailService";
 import { decrypt } from "../encryption.js";
 import { UserSettings } from "../../models/userSettings.js";
+import { UserPlan } from "../../models/userPlan";
 
 
 class LogWorkerService {
@@ -161,6 +162,14 @@ class LogWorkerService {
         });
 
         console.log(` => [LOG WORKER SERVICE:getAiInsight] Received generated insight from AI for user: ${userId}`);
+
+        if (userSettings.useFreeQuota) {
+            // Atomically decrement the user's AI Insight quota after successful generation
+            await UserPlan.findOneAndUpdate(
+                { user: userId },
+                { $inc: { remainingFreeInsights: -1 } }
+            );
+        }
 
         return aiResponse;
     }

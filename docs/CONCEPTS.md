@@ -62,3 +62,23 @@ A secure token assigned to a specific application (Project) used for authenticat
     - **Mapping:** In the backend, a `SecretKey` document defines the "Project" via its `projectName` field. The frontend treats this document as a project entity.
     - **Security:** Raw API keys are **never** stored in the database. Only their `bcrypt` hashes are saved.
     - **Validation:** incoming logs are validated by comparing their provided key against the stored hash.
+
+---
+
+## 6. Log Quota Management & Rotation
+The Zag platform uses a quota-based system to ensure fair resource allocation and optimal performance.
+
+### A. Preserved Logs Quota
+Each user is assigned a `remainingPreservedLogs` quota (stored in `UserPlan`). This represents the total number of log entries the platform will persist for them across all their projects.
+- **Consumption:** Every successful log ingestion decrements this quota.
+- **Recovery:** When a log is deleted (individually or via project deletion), the quota slot is refunded to the user.
+
+### B. FIFO Log Rotation
+To maintain reliability without exceeding storage limits, Zag implements **First-In-First-Out (FIFO) Rotation**. 
+- If an application attempts to send new logs when the user's `remainingPreservedLogs` is zero or insufficient, Zag automatically deletes the oldest logs from that specific project to make room for the new data.
+- This ensures that developers always have access to their most recent application events.
+
+### C. AI Insight Quota
+AI-powered analysis is governed by `remainingFreeInsights`.
+- Users on the free tier have a limited number of "automated" insights.
+- Once this quota is exhausted, logs will still be ingested, but automated AI analysis will pause until the quota resets or the user switches to using their own API keys.

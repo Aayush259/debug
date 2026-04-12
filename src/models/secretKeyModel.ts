@@ -73,17 +73,37 @@ secretKeySchema.methods.compareKey = async function (key: string): Promise<boole
 }
 
 /**
- * Middleware: Cascading deletion.
- * Deletes all associated ProjectLogs and LogsDebug insights when a SecretKey is deleted.
+ * Middleware: Cascading deletion & Quota Recovery.
+ * 
+ * CORE RESPONSIBILITIES:
+ * 1. Cleanup: Deletes all associated `ProjectLogs` and `LogsDebug` insights 
+ *    when a SecretKey (Project) is removed to avoid orphaned data.
+ * 2. Quota Syncing: Calculates the total number of deleted logs and 
+ *    "refunds" them to the user's `remainingPreservedLogs` quota.
+ * 
+ * This ensures that deleting a project frees up storage space for the 
+ * user's other projects.
  */
 secretKeySchema.post("deleteOne", { document: true, query: false }, async function (doc) {
     try {
         const secretKeyId = doc._id;
-        // Delete associated project logs
-        await mongoose.model("ProjectLogs").deleteMany({ secretKeyId });
-        // Delete associated AI insights
+        // Delete associated project logs and capture the count for quota refund
+        const result = await mongoose.model("ProjectLogs").deleteMany({ secretKeyId });
+        const deletedCount = result.deletedCount || 0;
+
+        // Delete associated AI insights (LogsDebug)
         await mongoose.model("LogsDebug").deleteMany({ secretKey: secretKeyId });
-        console.log(` => [MODEL: secretKeyModel] Cascading deletion complete for SecretKey: ${secretKeyId}`);
+
+        console.log(` => [MODEL: secretKeyModel] Cascading deletion complete for SecretKey: ${secretKeyId}. Deleted ${deletedCount} logs.`);
+
+        // Update the user's log quota (refund the deleted capacity)
+        if (deletedCount > 0) {
+            await mongoose.model("UserPlan").findOneAndUpdate(
+                { user: doc.user },
+                { $inc: { remainingPreservedLogs: deletedCount } }
+            );
+            console.log(` => [MODEL: secretKeyModel] Incremented remainingPreservedLogs by ${deletedCount} for user: ${doc.user}`);
+        }
     } catch (error) {
         console.error(" => [MODEL ERROR: secretKeyModel] Error in SecretKey cascading deletion:", error);
     }

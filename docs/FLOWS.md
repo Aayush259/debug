@@ -47,9 +47,13 @@ The core value proposition of Zag is the asynchronous transformation of raw logs
 The public ingestion endpoint (`POST /api/logs/:keyId`) is designed for speed.
 
 1. **Extraction:** Receives an array of logs (structured or raw strings).
-2. **Auto-Classification:** Logs without an explicit level run through `classifyLog`, which uses regex patterns to identify keywords like `error`, `exception`, `fatal`, or `stack trace`.
-3. **Database Bulk Insert:** Processed logs are batch-inserted via `insertMany` for efficiency.
-4. **Dashboard Broadcast:** The system retrieves the `io` instance and emits `GET_LOGS` to the user's specific room (identified by `userId`).
+2. **Quota / Rotation Check:** 
+    - Queries `UserPlan` for `remainingPreservedLogs`.
+    - If incoming count exceeds quota, Zag executes **FIFO Rotation**: it deletes the oldest `$excess` logs for that specific project from the database.
+    - If within quota, it atomically decrements the user's `remainingPreservedLogs`.
+3. **Auto-Classification:** Logs without an explicit level run through `classifyLog` to identify severity.
+4. **Database Bulk Insert:** Processed logs are batch-inserted via `insertMany`.
+5. **Dashboard Broadcast:** Emits `GET_LOGS` via Socket.IO to the user's room.
 
 ### B. Phase 2: Background Orchestration (BullMQ)
 Logs flagged as `warn` or `error` enter the AI pipeline managed by **BullMQ** and **Redis**.
@@ -63,9 +67,11 @@ Logs flagged as `warn` or `error` enter the AI pipeline managed by **BullMQ** an
 ### C. Phase 3: AI Analysis & Multi-Model Support
 Zag uses a modular AI layer to interface with various LLMs via the `ai` library.
 
-1. **Context Construction:** The system combines the raw log with specialized **System Prompts** (`LOG_EXPLAINER`) that instruct the AI to return a specific JSON schema.
-2. **Provider Resolution:** Based on `UserSettings`, the engine instantiates the correct model (Google Gemini, OpenAI GPT-4, etc.) using the user's decrypted API key.
-3. **Response Parsing:** The AI's markdown output is parsed via regex to extract the JSON block. A fallback mechanism handles malformed responses by saving the raw text as the "Explanation" and defaulting the severity to "medium".
+1. **Context Construction:** Combines the raw log with specialized **System Prompts** (`LOG_EXPLAINER`).
+2. **Quota Validation:** Checks `UserPlan.remainingFreeInsights`. If using Zag's free tier and the quota is 0, the analysis is skipped.
+3. **Provider Resolution:** Based on `UserSettings`, instantiates the model (Gemini, GPT-4, etc.) using the decrypted API key.
+4. **Quota Decrement:** Upon successful generation (if using free tier), `remainingFreeInsights` is atomically decremented.
+5. **Response Parsing:** Extracts JSON block from AI output.
 
 ### D. Phase 4: Cross-Channel Notification
 Once an insight is persisted, Zag triggers a multi-pronged notification flow, subject to user preferences:
@@ -78,3 +84,18 @@ Once an insight is persisted, Zag triggers a multi-pronged notification flow, su
     - Triggered only if `emailErrorLogs` is enabled in `UserSettings`.
     - **Nodemailer** constructs a rich HTML email.
     - It highlights the error and, if available, provides a "glimpse" of the AI insight with a link back to the Zag dashboard.
+
+---
+
+## 4. Quota Recovery & Cascading Deletion
+
+To ensure quota integrity, Zag maintains strict sync between the database and the `UserPlan` model.
+
+### A. Manual / Individual Deletion
+The `ProjectLogs` model includes a `post-deleteOne` middleware. When a developer deletes a single log entry via the dashboard or API, the system automatically increments `remainingPreservedLogs` by 1.
+
+### B. Project Deletion (Secret Key)
+When a Project (SecretKey) is deleted, a cascading cleanup is triggered:
+1. **Log Cleanup:** All `ProjectLogs` associated with that key are deleted.
+2. **Quota Refund:** The total count of deleted logs is calculated and added back to the user's `remainingPreservedLogs` balance.
+3. **Insight Cleanup:** All associated `LogsDebug` insights are removed.

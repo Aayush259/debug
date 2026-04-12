@@ -230,14 +230,54 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
             return processedLog;
         });
 
+        // --- LOG ROTATION & QUOTA MANAGEMENT ---
+        // We ensure that users doesn't exceed their preserved logs quota.
+        // If the incoming logs push them over the limit, we rotate (delete) the oldest logs.
+        
+        // Fetch user plan to check for log rotation
+        const userPlan = await UserPlan.findOne({ user: secretKey.user });
+
+        if (!userPlan) {
+            return res.status(404).json({ status: "error", message: "User plan not found" });
+        }
+
+        const newLogsCount = processedLogs.length;
+        const remaining = userPlan.remainingPreservedLogs;
+
+        // Check if we need to rotate logs (FIFO)
+        if (remaining < newLogsCount) {
+            const excessCount = newLogsCount - remaining;
+
+            // Find oldest logs for this user from THIS project only to maintain project-specific history
+            const oldestLogs = await ProjectLogs.find({
+                user: secretKey.user,
+                secretKeyId: keyId
+            })
+                .sort({ createdAt: 1 })
+                .limit(excessCount)
+                .select("_id");
+
+            if (oldestLogs.length > 0) {
+                console.log(` => [API: saveProjectLogs] Rotating ${oldestLogs.length} oldest logs for project: ${keyId}`);
+                await ProjectLogs.deleteMany({ _id: { $in: oldestLogs.map(log => log._id) } });
+            }
+
+            // Reset remainingPreservedLogs to 0 as the quota is now fully utilized
+            await UserPlan.findOneAndUpdate(
+                { user: secretKey.user },
+                { remainingPreservedLogs: 0 }
+            );
+        } else {
+            // Atomically decrement the remaining preserved logs count for the new ingestion
+            await UserPlan.findOneAndUpdate(
+                { user: secretKey.user },
+                { $inc: { remainingPreservedLogs: -newLogsCount } }
+            );
+        }
+        // --- END LOG ROTATION ---
+
         // Insert into database
         const savedLogs = await ProjectLogs.insertMany(processedLogs);
-
-        // Atomically decrement the remaining preserved logs count for the user
-        await UserPlan.findOneAndUpdate(
-            { user: secretKey.user },
-            { $inc: { remainingPreservedLogs: -processedLogs.length } }
-        );
 
         // Send logs via Socket.IO
         const io = req.app.get("io");
@@ -245,18 +285,20 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
             io.to(secretKey.user.toString()).emit(EVENTS.GET_LOGS, savedLogs);
         }
 
-        // Push errors and warnings to the AI background queue
-        savedLogs.forEach((logItem) => {
-            if (logItem.level === 'error' || logItem.level === 'warn') {
-                console.log(` => [API: saveProjectLogs] Flagged ${logItem.level} log for AI processing. Triggering queue for ID: ${logItem._id.toString()}`);
+        // Push errors and warnings to the AI background queue (API Gatekeeping)
+        const aiTargets = savedLogs.filter((log) => log.level === "error" || log.level === "warn");
+
+        if (aiTargets.length > 0 && userPlan.remainingFreeInsights > 0) {
+            aiTargets.forEach((logItem) => {
+                console.log(` => [API: saveProjectLogs] Enqueueing ${logItem.level} log for AI processing. Log ID: ${logItem._id.toString()}`);
                 enqueueLogForAnalysis(
                     logItem._id.toString(),
                     logItem.secretKeyId.toString(),
                     logItem.user.toString(),
                     logItem.log
-                ).catch(err => console.error(" => [API: saveProjectLogs] Failed to enqueue log for AI analysis:", err));
-            }
-        });
+                ).catch((err) => console.error(" => [API: saveProjectLogs] Failed to enqueue log:", err));
+            });
+        }
 
         return res.status(201).json({
             status: "success",

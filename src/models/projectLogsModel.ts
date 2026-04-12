@@ -51,4 +51,25 @@ const projectLogsSchema = new Schema<IProjectLogs>({
     }
 }, { timestamps: true });
 
+/**
+ * Middleware: Sync log quota on individual log deletion.
+ * 
+ * CORE LOGIC:
+ * When a log entry is manually or programmatically deleted, we must "restore" 
+ * that slot to the user's preserved logs quota. This ensures that the 
+ * `remainingPreservedLogs` count accurately reflects the current storage state.
+ */
+projectLogsSchema.post("deleteOne", { document: true, query: false }, async function (doc) {
+    try {
+        // Atomically increment the user's log quota by 1
+        await mongoose.model("UserPlan").findOneAndUpdate(
+            { user: doc.user },
+            { $inc: { remainingPreservedLogs: 1 } }
+        );
+        console.log(` => [MODEL: projectLogsModel] Incremented remainingPreservedLogs by 1 for user: ${doc.user}`);
+    } catch (error) {
+        console.error(" => [MODEL ERROR: projectLogsModel] Error syncing log quota on deletion:", error);
+    }
+});
+
 export const ProjectLogs: Model<IProjectLogs> = mongoose.models.ProjectLogs || mongoose.model<IProjectLogs>("ProjectLogs", projectLogsSchema, "projectLogs");
