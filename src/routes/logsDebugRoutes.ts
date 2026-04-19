@@ -3,12 +3,12 @@
  * @description API routes for managing AI-generated debugging insights.
  * 
  * CORE CONCEPT:
- * These routes provide the backend API consumed by the **Zag Frontend** 
+ * These routes provide the backend API consumed by the **Krvyu Frontend** 
  * to allow developers to interact with the "AI Insights" generated 
  * from their application logs. 
  * 
  * Features:
- * 1. Retrieval: The Zag Frontend fetches pending insights, historical 
+ * 1. Retrieval: The Krvyu Frontend fetches pending insights, historical 
  *    insights, or project-specific insights to display on the dashboard.
  * 2. Resolution: Developers mark insights as "resolved" via the UI, 
  *    which triggers an update through these endpoints.

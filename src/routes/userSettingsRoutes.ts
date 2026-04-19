@@ -3,14 +3,14 @@
  * @description API routes for managing developer-specific settings.
  * 
  * CORE CONCEPT:
- * These routes provide the backend API consumed by the **Zag Frontend** 
+ * These routes provide the backend API consumed by the **Krvyu Frontend** 
  * to manage user configurations, such as AI model preferences and API keys.
  * 
  * Functionality:
  * 1. Preference Management: Allows the dashboard to fetch and update 
  *    the current user's AI analysis settings.
  * 2. Security: Protected by `requireAuth` to ensure configuration changes 
- *    are performed by the authenticated owner via the Zag dashboard.
+ *    are performed by the authenticated owner via the Krvyu dashboard.
  */
 
 import express from "express";

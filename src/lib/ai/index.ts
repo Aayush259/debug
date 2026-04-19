@@ -3,7 +3,7 @@
  * @description Central orchestration layer for AI-powered log interpretation.
  * 
  * CORE CONCEPT:
- * This component acts as the bridge between the Zag platform's data layer 
+ * This component acts as the bridge between the Krvyu platform's data layer 
  * and external Large Language Models (LLMs). It transforms raw application 
  * logs into structured, actionable insights.
  * 

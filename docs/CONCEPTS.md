@@ -1,23 +1,23 @@
-# Core Concepts - Zag SaaS Platform
+# Core Concepts - Krvyu SaaS Platform
 
-This document defines and explains the core concepts within the Zag platform. It maps these concepts across the backend and frontend, highlighting naming differences where they exist.
+This document defines and explains the core concepts within the Krvyu platform. It maps these concepts across the backend and frontend, highlighting naming differences where they exist.
 
 ---
 
 ## 1. User
-The **User** is the primary entity of the Zag platform.
+The **User** is the primary entity of the Krvyu platform.
 
-A developer or client who uses Zag to monitor their applications and resolve AI-generated debugging insights.
+A developer or client who uses Krvyu to monitor their applications and resolve AI-generated debugging insights.
 - **Backend naming:** `User`
 - **Frontend naming:** `User`
 - **Lifecycle:**
-    1. Register/Authenticate with Zag.
+    1. Register/Authenticate with Krvyu.
     2. Create Projects and generate Secret Keys.
-    3. Integrate the Zag SDK into their external applications.
+    3. Integrate the Krvyu SDK into their external applications.
     4. Review and resolve AI Insights.
 
 ## 2. UserSettings
-**UserSettings** manage the personalized configuration of the Zag analysis engine.
+**UserSettings** manage the personalized configuration of the Krvyu analysis engine.
 
 Configuration that determines which AI models are used to process logs and how those models are authenticated.
 - **Backend naming:** `User Settings`
@@ -26,7 +26,7 @@ Configuration that determines which AI models are used to process logs and how t
     - **Model Provider:** Choose between Google, OpenAI, or Anthropic.
     - **Model Selection:** Specify the version of the AI model (e.g., `gemini-flash-latest`).
     - **API Key Management:** Storage for user-provided API keys (BYOK).
-    - **Quota Management:** Toggle between using Zag's free tier quota or personal API keys.
+    - **Quota Management:** Toggle between using Krvyu's free tier quota or personal API keys.
     - **Feature Toggles:**
         - `aiInsightsEnabled`: Globally enable/disable AI-powered log analysis.
         - `emailErrorLogs`: Toggle email notifications for critical error logs.
@@ -35,7 +35,7 @@ Configuration that determines which AI models are used to process logs and how t
     - Email notifications (`emailErrorLogs`) are not supported on the Hobby tier.
 
 ## 3. LogsDebug (AI Insight)
-A **LogsDebug** entry is the intelligence layer of the Zag platform.
+A **LogsDebug** entry is the intelligence layer of the Krvyu platform.
 
 An AI-generated report that provides an explanation and potential solution for an error captured from an application.
 - **Backend naming:** `LogsDebug`
@@ -47,15 +47,15 @@ An AI-generated report that provides an explanation and potential solution for a
     4. **Resolution:** The insight is marked as "resolved" once fixed.
 
 ## 4. ProjectLogs (Log)
-**ProjectLogs** are the raw data points flowing into the Zag system.
+**ProjectLogs** are the raw data points flowing into the Krvyu system.
 
-Individual events or messages emitted by a developer's application and captured by the Zag service.
+Individual events or messages emitted by a developer's application and captured by the Krvyu service.
 - **Backend naming:** `Project Logs`
 - **Frontend naming:** `Log`
 - **Role:** These logs serve as raw input for the AI analysis engine. They include a severity level (`info`, `warn`, `error`) and the log content itself.
 
 ## 5. SecretKey (Project)
-A **SecretKey** acts as the secure bridge between an external application and Zag.
+A **SecretKey** acts as the secure bridge between an external application and Krvyu.
 
 A secure token assigned to a specific application (Project) used for authenticating log transmissions.
 - **Backend naming:** `Secret Key`
@@ -69,7 +69,7 @@ A secure token assigned to a specific application (Project) used for authenticat
 ---
 
 ## 6. Log Quota Management & Rotation
-The Zag platform uses a quota-based system to ensure fair resource allocation and optimal performance.
+The Krvyu platform uses a quota-based system to ensure fair resource allocation and optimal performance.
 
 ### A. Preserved Logs Quota
 Each user is assigned a `remainingPreservedLogs` quota (stored in `UserPlan`). This represents the total number of log entries the platform will persist for them across all their projects.
@@ -77,8 +77,8 @@ Each user is assigned a `remainingPreservedLogs` quota (stored in `UserPlan`). T
 - **Recovery:** When a log is deleted (individually or via project deletion), the quota slot is refunded to the user.
 
 ### B. FIFO Log Rotation
-To maintain reliability without exceeding storage limits, Zag implements **First-In-First-Out (FIFO) Rotation**. 
-- If an application attempts to send new logs when the user's `remainingPreservedLogs` is zero or insufficient, Zag automatically deletes the oldest logs from that specific project to make room for the new data.
+To maintain reliability without exceeding storage limits, Krvyu implements **First-In-First-Out (FIFO) Rotation**. 
+- If an application attempts to send new logs when the user's `remainingPreservedLogs` is zero or insufficient, Krvyu automatically deletes the oldest logs from that specific project to make room for the new data.
 - This ensures that developers always have access to their most recent application events.
 
 ### C. AI Insight Quota
@@ -87,6 +87,6 @@ AI-powered analysis is governed by `remainingFreeInsights`.
 - Once this quota is exhausted, logs will still be ingested, but automated AI analysis will pause until the quota resets or the user switches to using their own API keys (where supported). For hobby plan, the quota never resets, but for other plans, it gets reset monthly.
 
 ### D. Plan-Based Feature Gating
-The Zag platform enforces feature parity based on the user's active subscription tier.
+The Krvyu platform enforces feature parity based on the user's active subscription tier.
 - **Hobby Plan:** Entry-level tier. Does not support BYOK (Bring Your Own Key) or off-platform email alerts. AI analysis is restricted to the platform's default provider and model.
 - **Developer/Enterprise Plans:** Support full customization of AI providers, personal API key usage, and comprehensive cross-channel notifications.

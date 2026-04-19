@@ -1,9 +1,9 @@
 /**
  * @file userSettings.ts
- * @description Defines the UserSettings schema for the Zag SaaS platform.
+ * @description Defines the UserSettings schema for the Krvyu SaaS platform.
  * 
  * CORE CONCEPT:
- * "UserSettings" manage the personalized configuration of the Zag analysis 
+ * "UserSettings" manage the personalized configuration of the Krvyu analysis 
  * engine for each developer. It determines which AI models are used to 
  * process logs and how those models are authenticated.
  * 

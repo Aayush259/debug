@@ -1,11 +1,11 @@
 /**
  * @file redisSubscriber.ts
- * @description Real-time bridge between background analysis and the Zag console.
+ * @description Real-time bridge between background analysis and the Krvyu console.
  * 
  * CORE CONCEPT:
  * The Redis Subscriber is a critical component for the platform's "real-time" 
  * value proposition. It listens for events published by background workers 
- * (like the logWorker) and immediately pushes them to the **Zag Frontend**.
+ * (like the logWorker) and immediately pushes them to the **Krvyu Frontend**.
  * 
  * Data Flow:
  * 1. Listening: Subscribes to the `ai-insight-channel` in Redis.

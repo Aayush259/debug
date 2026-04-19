@@ -4,7 +4,7 @@
  * 
  * CORE CONCEPT:
  * This component manages the Socket.IO server, facilitating immediate, 
- * bidirectional communication between the Zag Backend and the Zag Frontend.
+ * bidirectional communication between the Krvyu Backend and the Krvyu Frontend.
  * 
  * Responsibilities:
  * 1. Connection Management: Tracks active developer sessions and handles 
@@ -18,7 +18,7 @@
  * Workflow:
  * - When the `logWorker` finishes an analysis, it publishes to Redis.
  * - The `RedisSubscriber` receives the message and calls `io.to(userId).emit()`.
- * - The Zag Frontend receives the payload and updates the UI instantly.
+ * - The Krvyu Frontend receives the payload and updates the UI instantly.
  */
 
 import { Server, Socket } from "socket.io";

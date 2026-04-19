@@ -4,7 +4,7 @@
  * 
  * CORE CONCEPT:
  * This controller manages the "Secure Bridges" (Secret Keys) that link 
- * external applications to the Zag platform. It handles the CRUD 
+ * external applications to the Krvyu platform. It handles the CRUD 
  * operations for projects and their associated security credentials.
  * 
  * Responsibilities:
@@ -21,7 +21,7 @@
  * 
  * Consumer:
  * - These functions are exclusively called by the dashboard internal 
- *   routes to populate the Zag Dashboard UI.
+ *   routes to populate the Krvyu Dashboard UI.
  * 
  * Note: Decryption and verification of these keys during log ingestion 
  * is handled separately in the `projectLogsControllers.ts` ingestion flow.

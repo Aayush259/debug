@@ -1,8 +1,8 @@
-# Zag Project Flows
+# Krvyu Project Flows
 
 ## 1. Multi-Layer Authentication & Settings Configuration
 
-Zag utilizes a distributed authentication strategy to ensure consistent identity across RESTful APIs and real-time WebSocket streams.
+Krvyu utilizes a distributed authentication strategy to ensure consistent identity across RESTful APIs and real-time WebSocket streams.
 
 ### A. Authentication Lifecycle (Better Auth)
 The platform delegates identity management to **Better Auth**, configured with a **MongoDB Adapter** for persistent session tracking.
@@ -27,7 +27,7 @@ Personal AI configuration requires securing sensitive third-party API keys (Open
 
 ## 2. Project Tokenization & Secure Ingestion
 
-Zag uses a hashed-token strategy (similar to GitHub Personal Access Tokens) to bridge external logs into the platform without compromising project security.
+Krvyu uses a hashed-token strategy (similar to GitHub Personal Access Tokens) to bridge external logs into the platform without compromising project security.
 
 ### A. Secret Key Generation Workflow
 ![Project Tokenization](../images/project_tokenization.png)
@@ -41,7 +41,7 @@ Zag uses a hashed-token strategy (similar to GitHub Personal Access Tokens) to b
 
 ## 3. The Log-to-Insight Pipeline (Async AI Engine)
 
-The core value proposition of Zag is the asynchronous transformation of raw logs into AI-powered solutions.
+The core value proposition of Krvyu is the asynchronous transformation of raw logs into AI-powered solutions.
 
 ### A. Phase 1: High-Throughput Ingestion
 The public ingestion endpoint (`POST /api/logs/:keyId`) is designed for speed.
@@ -49,7 +49,7 @@ The public ingestion endpoint (`POST /api/logs/:keyId`) is designed for speed.
 1. **Extraction:** Receives an array of logs (structured or raw strings).
 2. **Quota / Rotation Check:** 
     - Queries `UserPlan` for `remainingPreservedLogs`.
-    - If incoming count exceeds quota, Zag executes **FIFO Rotation**: it deletes the oldest `$excess` logs for that specific project from the database.
+    - If incoming count exceeds quota, Krvyu executes **FIFO Rotation**: it deletes the oldest `$excess` logs for that specific project from the database.
     - If within quota, it atomically decrements the user's `remainingPreservedLogs`.
 3. **Auto-Classification:** Logs without an explicit level run through `classifyLog` to identify severity.
 4. **Database Bulk Insert:** Processed logs are batch-inserted via `insertMany`.
@@ -66,7 +66,7 @@ Logs flagged as `warn` or `error` enter the AI pipeline managed by **BullMQ** an
 - **Deduplication Logic:** To prevent redundant LLM costs, the worker queries the last 10 identical logs for the same project. If an insight already exists for that specific error message, it "clones" the previous explanation and solution instead of re-analyzing (only if AI insights are enabled).
 
 ### C. Phase 3: AI Analysis & Multi-Model Support
-Zag uses a modular AI layer to interface with various LLMs via the `ai` library.
+Krvyu uses a modular AI layer to interface with various LLMs via the `ai` library.
 
 1. **Context Construction:** Combines the raw log with specialized **System Prompts** (`LOG_EXPLAINER`).
 2. **Quota / Plan Validation:** 
@@ -77,7 +77,7 @@ Zag uses a modular AI layer to interface with various LLMs via the `ai` library.
 5. **Response Parsing:** Extracts JSON block from AI output.
 
 ### D. Phase 4: Cross-Channel Notification
-Once an insight is persisted, Zag triggers a multi-pronged notification flow, subject to user preferences:
+Once an insight is persisted, Krvyu triggers a multi-pronged notification flow, subject to user preferences:
 
 1. **Real-time (Redis Pub/Sub):**
     - Triggered only if `aiInsightsEnabled` is active and an insight was generated.
@@ -86,13 +86,13 @@ Once an insight is persisted, Zag triggers a multi-pronged notification flow, su
 2. **Off-Platform (Email):**
     - **Gating:** Triggered only if `emailErrorLogs` is enabled in `UserSettings` **AND** the user's `UserPlan` supports `emailAlerts` (Hobby users are excluded).
     - **Method:** **Nodemailer** constructs a rich HTML email.
-    - It highlights the error and, if available, provides a "glimpse" of the AI insight with a link back to the Zag dashboard.
+    - It highlights the error and, if available, provides a "glimpse" of the AI insight with a link back to the Krvyu dashboard.
 
 ---
 
 ## 4. Quota Recovery & Cascading Deletion
 
-To ensure quota integrity, Zag maintains strict sync between the database and the `UserPlan` model.
+To ensure quota integrity, Krvyu maintains strict sync between the database and the `UserPlan` model.
 
 ### A. Manual / Individual Deletion
 The `ProjectLogs` model includes a `post-deleteOne` middleware. When a developer deletes a single log entry via the dashboard or API, the system automatically increments `remainingPreservedLogs` by 1.

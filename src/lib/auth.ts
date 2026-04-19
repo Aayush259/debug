@@ -1,6 +1,6 @@
 /**
  * @file auth.ts
- * @description Authentication engine initialization for the Zag platform.
+ * @description Authentication engine initialization for the Krvyu platform.
  * 
  * CORE CONCEPT:
  * This file configures and exports the `better-auth` instance, which serves 
@@ -10,7 +10,7 @@
  * 1. Social Login: Enables authentication via GitHub and Google to simplify 
  *    the developer onboarding experience.
  * 2. Session Management: Handles session creation, validation, and persistence, 
- *    ensuring secure access to the Zag dashboard.
+ *    ensuring secure access to the Krvyu dashboard.
  * 3. Database Persistence: Uses the `mongodbAdapter` linked to the raw MongoDB 
  *    driver (from `db.ts`) for efficient session and account storage.
  */
@@ -51,12 +51,12 @@ export const auth = betterAuth({
                         planType: "hobby",
                         planStartDate: new Date(),
                         planEndDate: null,
-                        remainingProjects: 3,
+                        remainingProjects: 1,
                         remainingFreeInsights: 10,
-                        remainingPreservedLogs: 500,
-                        totalProjects: 3,
+                        remainingPreservedLogs: 200,
+                        totalProjects: 1,
                         totalFreeInsights: 10,
-                        totalPreservedLogs: 500,
+                        totalPreservedLogs: 200,
                         price: 0,
                         byok: false,
                         emailAlerts: false,

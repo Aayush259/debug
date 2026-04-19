@@ -1,6 +1,6 @@
 /**
  * @file mailService.ts
- * @description Outgoing email communication service for the Zag platform.
+ * @description Outgoing email communication service for the Krvyu platform.
  * 
  * CORE CONCEPT:
  * The Mail Service handles all transactional and notification-based emails 
@@ -40,7 +40,7 @@ class MailService {
     async sendMail(to: string, subject: string, html: string) {
         try {
             const info = await this.transporter.sendMail({
-                from: `"Zag" <${config.mail_from}>`,
+                from: `"Krvyu" <${config.mail_from}>`,
                 to,
                 subject,
                 html,
@@ -85,7 +85,7 @@ class MailService {
         const html = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #eaeaea;">
                 <div style="background-color: #1a1a1a; padding: 24px 32px; border-bottom: 3px solid #e11d48;">
-                    <h2 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">Zag</h2>
+                    <h2 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 600;">Krvyu</h2>
                 </div>
                 
                 <div style="padding: 32px;">
@@ -93,7 +93,7 @@ class MailService {
                     
                     <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-top: 0; margin-bottom: 24px;">
                         Hello ${name},<br><br>
-                        Zag detected an error log in <strong>${projectName}</strong>.
+                        Krvyu detected an error log in <strong>${projectName}</strong>.
                     </p>
                     
                     <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
@@ -132,7 +132,7 @@ class MailService {
                     <hr style="border: 0; border-top: 1px solid #eaeaea; margin-bottom: 24px;">
                     
                     <p style="margin: 0; color: #9ca3af; font-size: 14px; line-height: 1.5; text-align: center;">
-                        This is an automated mail from Zag.<br>
+                        This is an automated mail from Krvyu.<br>
                         Visit your platform console to configure alert settings.
                     </p>
                 </div>

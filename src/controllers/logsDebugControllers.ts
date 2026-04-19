@@ -4,8 +4,8 @@
  * 
  * CORE CONCEPT:
  * This controller serves as the primary data interface for AI insights 
- * on the Zag platform. It bridges the gap between the `LogsDebug` 
- * domain model and the Zag Frontend dashboard.
+ * on the Krvyu platform. It bridges the gap between the `LogsDebug` 
+ * domain model and the Krvyu Frontend dashboard.
  * 
  * Responsibilities:
  * 1. Data Retrieval: Fetches paginated lists of AI insights, allowing 
@@ -19,7 +19,7 @@
  * 
  * Consumer:
  * - These functions are exclusively called by the dashboard internal 
- *   routes to populate the Zag Dashboard UI.
+ *   routes to populate the Krvyu Dashboard UI.
  */
 
 import { Request, Response } from "express";

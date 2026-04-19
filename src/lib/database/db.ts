@@ -1,6 +1,6 @@
 /**
  * @file db.ts
- * @description Raw MongoDB driver connection for the Zag platform.
+ * @description Raw MongoDB driver connection for the Krvyu platform.
  * 
  * CORE CONCEPT:
  * This file initializes a low-level MongoDB connection using the native 

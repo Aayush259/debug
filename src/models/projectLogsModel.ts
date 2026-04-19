@@ -1,14 +1,14 @@
 /**
  * @file projectLogsModel.ts
- * @description Defines the ProjectLogs schema for the Zag SaaS platform.
+ * @description Defines the ProjectLogs schema for the Krvyu SaaS platform.
  * 
  * CORE CONCEPT:
  * A "Project Log" represents an individual event or message emitted by a 
- * developer's application and captured by the Zag monitoring service.
+ * developer's application and captured by the Krvyu monitoring service.
  * 
  * Data Flow:
  * 1. External applications send logs via the public API endpoint, authenticated by a Secret Key.
- * 2. Zag identifies the `User` and `SecretKey` associated with the incoming log.
+ * 2. Krvyu identifies the `User` and `SecretKey` associated with the incoming log.
  * 3. Each log is stored as a `ProjectLog` document.
  * 4. RAW DATA: These logs serve as the raw input for our background workers (e.g., logWorker)
  *    which use AI to generate debugging insights (stored in logsDebugModel).

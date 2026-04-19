@@ -1,5 +1,6 @@
 type LogLevel = "info" | "warn" | "error";
 type AIProvider = "google" | "openai" | "anthropic";
+type TPlanType = "hobby" | "developer" | "enterprise";
 
 interface AIModelRegistryItem {
     id: string;

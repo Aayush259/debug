@@ -3,7 +3,7 @@
  * @description Background processing engine for AI-powered log analysis.
  * 
  * CORE CONCEPT:
- * The Log Worker is the "brain" of the Zag platform. It operates 
+ * The Log Worker is the "brain" of the Krvyu platform. It operates 
  * asynchronously to transform raw log data into actionable AI insights.
  * 
  * Workflow:

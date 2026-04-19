@@ -1,16 +1,16 @@
 /**
  * @file userModel.ts
- * @description Defines the User schema for the Zag SaaS platform.
+ * @description Defines the User schema for the Krvyu SaaS platform.
  * 
  * CORE CONCEPT:
- * In the context of the Zag platform, a "User" is a developer or a client who utilizes 
+ * In the context of the Krvyu platform, a "User" is a developer or a client who utilizes 
  * our AI-powered debugging and log monitoring services.
  * 
  * A User's lifecycle involves:
- * 1. Registering/Authenticating with the Zag platform.
+ * 1. Registering/Authenticating with the Krvyu platform.
  * 2. Creating Projects and generating Secret Keys (via secretKeyModel).
  * 3. Integrating our SDK into their own external applications.
- * 4. Sending application logs to Zag for monitoring (via projectLogsModel).
+ * 4. Sending application logs to Krvyu for monitoring (via projectLogsModel).
  * 5. Reviewing and resolving AI-generated debugging insights (via logsDebugModel).
  * 
  * Thus, the User is the central entity managing the monitoring and debugging 

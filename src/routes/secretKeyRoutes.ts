@@ -3,14 +3,14 @@
  * @description API routes for managing Project Secret Keys.
  * 
  * CORE CONCEPT:
- * These routes provide the backend API consumed by the **Zag Frontend** 
+ * These routes provide the backend API consumed by the **Krvyu Frontend** 
  * to handle the creation, retrieval, and management of Secret Keys.
  * 
  * Functionality:
  * 1. Key Generation: Allows the dashboard to create new API tokens for projects.
  * 2. Management: Enables the UI to list, update, or revoke existing keys.
  * 3. Security: All routes are protected by `requireAuth`, ensuring developers 
- *    only manage keys for their own projects via the Zag UI.
+ *    only manage keys for their own projects via the Krvyu UI.
  */
 
 import express from "express";

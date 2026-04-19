@@ -1,6 +1,6 @@
 /**
  * @file prompts.ts
- * @description Expert personas and instructional templates for Zag AI analysis.
+ * @description Expert personas and instructional templates for Krvyu AI analysis.
  * 
  * CORE CONCEPT:
  * This component defines the "intelligence profile" of the platform's AI. 

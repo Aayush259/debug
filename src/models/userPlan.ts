@@ -1,10 +1,10 @@
 /**
  * @file userPlan.ts
- * @description Defines the UserPlan schema for the Zag SaaS platform.
+ * @description Defines the UserPlan schema for the Krvyu SaaS platform.
  * 
  * CORE CONCEPT:
  * "UserPlan" manages the subscription details and resource quotas for each 
- * developer on the Zag platform. It tracks their current plan level, 
+ * developer on the Krvyu platform. It tracks their current plan level, 
  * activation dates, and both total and remaining balances for project creation, 
  * AI analysis, and log preservation.
  * 
@@ -23,7 +23,7 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface IUserPlan extends Document {
     user: mongoose.Types.ObjectId;
-    planType: "hobby" | "developer" | "enterprise";
+    planType: TPlanType;
     planStartDate: Date;
     planEndDate?: Date | null;
     remainingProjects: number;
@@ -73,7 +73,7 @@ const userPlanSchema = new Schema<IUserPlan>({
     remainingProjects: {
         type: Number,
         required: true,
-        default: 3 // Default for hobby
+        default: 1 // Default for hobby
     },
     /** Remaining number of AI insights (from free quota) available this month. */
     remainingFreeInsights: {
@@ -85,13 +85,13 @@ const userPlanSchema = new Schema<IUserPlan>({
     remainingPreservedLogs: {
         type: Number,
         required: true,
-        default: 500 // Default for hobby
+        default: 200 // Default for hobby
     },
     /** Total number of projects the user can create. */
     totalProjects: {
         type: Number,
         required: true,
-        default: 3 // Default for hobby
+        default: 1 // Default for hobby
     },
     /** Total number of AI insights the user can get per month. */
     totalFreeInsights: {

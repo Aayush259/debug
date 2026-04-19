@@ -1,6 +1,6 @@
 /**
  * @file redis.ts
- * @description Centralized Redis connection management for the Zag platform.
+ * @description Centralized Redis connection management for the Krvyu platform.
  * 
  * CORE CONCEPT:
  * This file initializes the primary Redis client instance used across the 
@@ -12,7 +12,7 @@
  * 2. Configuration: Leverages the project's centralized `config` to 
  *    establish a connection with the appropriate host and port.
  * 3. Event Distribution: Serves as the backbone for real-time AI insight 
- *    notifications, enabling the server to push events to the **Zag Frontend**.
+ *    notifications, enabling the server to push events to the **Krvyu Frontend**.
  */
 
 import Redis from "ioredis";

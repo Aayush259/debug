@@ -1,10 +1,10 @@
 /**
  * @file logsDebugModel.ts
- * @description Defines the LogsDebug schema for the Zag SaaS platform.
+ * @description Defines the LogsDebug schema for the Krvyu SaaS platform.
  * 
  * CORE CONCEPT:
  * A "LogsDebug" entry (referred to as an "AI Insight") is the end-product 
- * of the Zag analysis pipeline. It provides developers with an AI-generated 
+ * of the Krvyu analysis pipeline. It provides developers with an AI-generated 
  * explanation and a potential solution for errors captured in `ProjectLogs`.
  * 
  * Insights Cycle:

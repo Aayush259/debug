@@ -1,16 +1,16 @@
 /**
  * @file authMiddleware.ts
- * @description Authentication middleware for the Zag SaaS platform.
+ * @description Authentication middleware for the Krvyu SaaS platform.
  * 
  * CORE CONCEPT:
  * The `requireAuth` middleware ensures that only authenticated users 
- * can access the protected routes consumed by the **Zag Frontend**.
+ * can access the protected routes consumed by the **Krvyu Frontend**.
  * It validates sessions and prevents unauthorized access to sensitive 
  * project data and AI insights.
  * 
  * Workflow:
  * 1. Extraction: Retrieves session information from incoming request headers 
- *    sent by the Zag Frontend.
+ *    sent by the Krvyu Frontend.
  * 2. Validation: Uses better-auth to check if a valid session exists.
  * 3. Injection: Attaches the `user` and `session` objects to the Express 
  *    Request for use by downstream controllers.

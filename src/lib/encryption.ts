@@ -1,6 +1,6 @@
 /**
  * @file encryption.ts
- * @description Secure data-at-rest protection for the Zag platform.
+ * @description Secure data-at-rest protection for the Krvyu platform.
  * 
  * CORE CONCEPT:
  * The Encryption Utility provides a cryptographic layer for protecting 

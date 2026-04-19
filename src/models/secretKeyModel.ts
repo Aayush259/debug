@@ -1,14 +1,14 @@
 /**
  * @file secretKeyModel.ts
- * @description Defines the SecretKey schema for the Zag SaaS platform.
+ * @description Defines the SecretKey schema for the Krvyu SaaS platform.
  * 
  * CORE CONCEPT:
  * A "Secret Key" is a secure API token that acts as a bridge between a 
- * developer's external application and the Zag monitoring service.
+ * developer's external application and the Krvyu monitoring service.
  * 
  * Functional Overview:
  * 1. Each Secret Key is associated with a specific Project (projectName) and a User.
- * 2. Developers include this key in their application (via Zag SDK) to authenticate
+ * 2. Developers include this key in their application (via Krvyu SDK) to authenticate
  *    log data transmission to our servers.
  * 3. SECURITY: To protect against database leaks, the raw API key is never 
  *    stored. It is hashed using bcrypt before being saved to the database.

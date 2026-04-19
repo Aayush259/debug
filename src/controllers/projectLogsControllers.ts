@@ -4,14 +4,14 @@
  * 
  * CORE CONCEPT:
  * This controller acts as the primary gateway for all log data on the 
- * Zag platform. It manages the lifecycle of logs from external 
+ * Krvyu platform. It manages the lifecycle of logs from external 
  * application ingestion to dashboard retrieval.
  * 
  * Responsibilities:
  * 1. Log Ingestion (Public API): Receives and processes log arrays from 
  *    external apps, verifying secret keys and classifying log levels.
  * 2. Real-Time Propagation: Triggers immediate emission of ingested logs 
- *    to the Zag Frontend via Socket.IO.
+ *    to the Krvyu Frontend via Socket.IO.
  * 3. AI Triggering: Identifies "error" or "warn" logs and enqueues them 
  *    for background AI analysis.
  * 4. Data Retrieval (Internal Dashboard): Provides paginated, filtered 
@@ -19,7 +19,7 @@
  * 
  * Consumer:
  * - Public Ingestion Endpoints (for external apps).
- * - Internal Dashboard Endpoints (for the Zag Frontend).
+ * - Internal Dashboard Endpoints (for the Krvyu Frontend).
  */
 
 import { Request, Response } from "express";
@@ -230,35 +230,57 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
             return processedLog;
         });
 
-        // --- LOG ROTATION & QUOTA MANAGEMENT ---
-        // We ensure that users doesn't exceed their preserved logs quota.
-        // If the incoming logs push them over the limit, we rotate (delete) the oldest logs.
+        // --- PLAN-BASED PROJECT GATING ---
+        // We ensure that logs are only accepted for "active" projects based on the user's plan limits.
+        // If a user has exceeded their project limit (e.g. downgraded to Hobby), 
+        // we only allow logs for the oldest X projects.
 
-        // Fetch user plan to check for log rotation
+        // Fetch user plan to check for log rotation and project limits
         const userPlan = await UserPlan.findOne({ user: secretKey.user });
 
         if (!userPlan) {
             return res.status(404).json({ status: "error", message: "User plan not found" });
         }
 
+        // Identify active projects (Oldest X projects)
+        const activeProjects = await SecretKey.find({ user: secretKey.user })
+            .sort({ createdAt: 1 })
+            .limit(userPlan.totalProjects)
+            .select("_id");
+
+        const isActiveProject = activeProjects.some(proj => proj._id.toString() === keyId);
+
+        if (!isActiveProject) {
+            console.warn(` => [API: saveProjectLogs] Rejected logs from inactive project: ${keyId}. User ${secretKey.user} has exceeded their ${userPlan.totalProjects} project limit.`);
+            return res.status(403).json({
+                status: "error",
+                message: `Project inactive - Your current plan (${userPlan.planType}) only supports ${userPlan.totalProjects} active project(s). Logs are only accepted for your oldest projects.`,
+                limitReached: true
+            });
+        }
+
+        // --- GLOBAL LOG ROTATION & QUOTA MANAGEMENT ---
+        // We ensure that users doesn't exceed their account-wide preserved logs quota.
+        // If the incoming logs push them over the limit, we rotate (delete) the oldest logs 
+        // across ALL of their projects (Global Rotation) to make room.
+
         const newLogsCount = processedLogs.length;
         const remaining = userPlan.remainingPreservedLogs;
 
-        // Check if we need to rotate logs (FIFO)
+        // Check if we need to rotate logs (FIFO - Global)
         if (remaining < newLogsCount) {
             const excessCount = newLogsCount - remaining;
 
-            // Find oldest logs for this user from THIS project only to maintain project-specific history
+            // Find oldest logs across ALL projects for this user to enforce strict global limits
             const oldestLogs = await ProjectLogs.find({
-                user: secretKey.user,
-                secretKeyId: keyId
+                user: secretKey.user
             })
                 .sort({ createdAt: 1 })
                 .limit(excessCount)
                 .select("_id");
 
             if (oldestLogs.length > 0) {
-                console.log(` => [API: saveProjectLogs] Rotating ${oldestLogs.length} oldest logs for project: ${keyId}`);
+                console.log(` => [API: saveProjectLogs] Global Rotation: Deleting ${oldestLogs.length} oldest logs across user ${secretKey.user}'s projects.`);
                 await ProjectLogs.deleteMany({ _id: { $in: oldestLogs.map(log => log._id) } });
             }
 

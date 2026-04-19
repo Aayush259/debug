@@ -3,7 +3,7 @@
  * @description Application entry point and main bootstrap orchestrator.
  * 
  * CORE CONCEPT:
- * This file is the central "wiring" hub of the Zag Backend. It initializes 
+ * This file is the central "wiring" hub of the Krvyu Backend. It initializes 
  * the Express server and bootstraps all critical internal services (Database, 
  * Redis, Sockets, and Background Workers).
  * 
@@ -18,7 +18,9 @@
  *    Better Auth session handlers for both REST and WebSocket layers.
  * 5. Route Registration: Hooks up all domain-specific routes (Secrets, 
  *    Logs, Settings, Insights) and the Public Ingestion endpoint.
- * 6. Worker Invocation: Triggers the native initialization of the 
+ * 6. Webhook Integration: Implements raw-body capture for Lemon Squeezy 
+ *    webhooks to enable cryptographic signature verification.
+ * 7. Worker Invocation: Triggers the native initialization of the 
  *    `logWorker` to begin processing the AI queue.
  * 
  * Infrastructure:
@@ -39,13 +41,22 @@ import { requireAuth } from "./middleware/authMiddleware.js";
 import projectLogsRoutes from "./routes/projectLogsRoutes.js";
 import userSettingsRoutes from "./routes/userSettingsRoutes.js";
 import logsDebugRoutes from "./routes/logsDebugRoutes.js";
+import billingRoutes from "./routes/billingRoutes.js";
 import { setupSocketHandlers, SocketData } from "./socket/index.js";
 import { setupRedisSubscriber } from "./lib/redis/redisSubscriber.js";
 import { saveProjectLogs } from "./controllers/projectLogsControllers.js";
+import { handleLemonWebhook } from "./controllers/billingController.js";
 import "./lib/workers/logWorker.js"; // Initialize background worker natively
 
 const app = express();
 const server = createServer(app);
+
+// --- WEBHOOK INTEGRATION ---
+// Special Route: Lemon Squeezy Webhook
+// CRITICAL: We use express.raw() here to capture the un-parsed body.
+// This is required for crypto.timingSafeEqual verification of the HMAC signature 
+// inside handleLemonWebhook. This MUST be mounted before the global express.json() parser.
+app.post("/webhooks/lemonsqueezy", express.raw({ type: "application/json" }), handleLemonWebhook);
 
 // Socket.IO server with CORS
 const io = new Server<any, any, any, SocketData>(server, {
@@ -70,11 +81,15 @@ app.get("/", (req, res) => {
 // Authentication handled by better-auth
 app.use("/api/auth", toNodeHandler(auth));
 
+// Global Middleware
+// Standardizes request body parsing to JSON for all internal API routes.
+// NOTE: Must be placed AFTER the /webhooks/lemonsqueezy raw-body route.
 app.use(express.json());    // Parse JSON request bodies middleware
 app.use("/api/secret-key", requireAuth, secretKeyRoutes);  // Secret key routes
 app.use("/api/project-logs", requireAuth, projectLogsRoutes);  // Project logs routes
 app.use("/api/user-settings", requireAuth, userSettingsRoutes);  // User settings routes
 app.use("/api/ai-insights", requireAuth, logsDebugRoutes);  // AI insights routes
+app.use("/api/billing", requireAuth, billingRoutes);    // Billing routes
 
 app.post("/api/logs/:keyId", saveProjectLogs);  // Save project logs (for client's project to send logs)
 

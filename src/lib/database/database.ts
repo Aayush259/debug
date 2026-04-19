@@ -1,6 +1,6 @@
 /**
  * @file database.ts
- * @description Centralized Mongoose connection management for the Zag platform.
+ * @description Centralized Mongoose connection management for the Krvyu platform.
  * 
  * CORE CONCEPT:
  * This file serves as the primary gateway for Object-Relational Mapping (ORM) 

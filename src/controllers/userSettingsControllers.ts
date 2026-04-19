@@ -4,7 +4,7 @@
  * 
  * CORE CONCEPT:
  * This controller allows developers to personalize their AI analysis 
- * experience on the Zag platform. It serves as the secure interface for 
+ * experience on the Krvyu platform. It serves as the secure interface for 
  * managing third-party LLM credentials and selecting preferred models.
  * 
  * Responsibilities:
@@ -15,11 +15,11 @@
  * 3. Quota Management: Tracks and updates preferences for using internal 
  *    free quotas vs. personal API keys.
  * 4. Model Discovery: Provides a validated list of supported models from 
- *    the central registry to the Zag Frontend.
+ *    the central registry to the Krvyu Frontend.
  * 
  * Consumer:
  * - These functions are exclusively called by the dashboard internal 
- *   routes to populate the Zag Dashboard UI.
+ *   routes to populate the Krvyu Dashboard UI.
  * 
  * Security:
  * - Sensitive API keys are NEVER sent to the frontend in their encrypted 
