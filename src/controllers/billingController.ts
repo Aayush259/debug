@@ -96,7 +96,8 @@ async function updateUserPlanLimits(userId: string, planType: keyof typeof PLAN_
     if (status === "active") {
         userPlan.planStartDate = new Date();
     }
-    userPlan.planEndDate = endsAt;
+    // If the plan is expired or resetting to hobby, the end date should be null.
+    userPlan.planEndDate = (status === "expired" || planType === "hobby") ? null : endsAt;
 
     return await userPlan.save();
 }
@@ -270,8 +271,6 @@ export const handleLemonWebhook = async (req: Request, res: Response) => {
         const attributes = payload.data.attributes;
         const lsId = payload.data.id;
 
-        console.log(` => [WEBHOOK RECEIVED] Event: ${eventName}`);
-
         // If meta.custom_data.user_id is missing (common in updates), we'll try to find it from our Order DB later.
         let userId = customData?.user_id;
 
@@ -336,73 +335,62 @@ export const handleLemonWebhook = async (req: Request, res: Response) => {
                 // Update User Plan Limits
                 await updateUserPlanLimits(userId, planType, "active", attributes.ends_at ? new Date(attributes.ends_at) : null);
 
-                console.log(`✅ Granted ${planType} access to User ID: ${userId}`);
                 break;
             }
 
-            case "subscription_updated": {
+            case "subscription_updated":
+            case "subscription_cancelled":
+            case "subscription_expired": {
                 if (!userId) break;
 
                 const status = attributes.status;
                 const variantId = (attributes.variant_id || attributes.first_order_item?.variant_id)?.toString();
+                const endsAt = attributes.ends_at ? new Date(attributes.ends_at) : null;
 
-                // Find existing order to check for plan changes (variant_id change)
-                const existingOrder = await LemonSqueezyOrder.findOne({ lsSubscriptionId: lsId });
-                const isPlanChange = existingOrder && existingOrder.variantId !== variantId;
-
+                // 1. Sync Lemon Squeezy Order State (Our source of payment truth)
                 await LemonSqueezyOrder.findOneAndUpdate(
                     { lsSubscriptionId: lsId },
                     {
                         status: status,
                         variantId: variantId,
                         renewsAt: attributes.renews_at ? new Date(attributes.renews_at) : null,
-                        endsAt: attributes.ends_at ? new Date(attributes.ends_at) : null,
+                        endsAt: endsAt,
                     }
                 );
 
-                if (isPlanChange || status === "active") {
+                // 2. Update User Plan (Our source of feature/access truth)
+                // If status is 'expired' or 'unpaid', or the event itself is 'expired', reset to Hobby.
+                if (status === "expired" || status === "unpaid" || eventName === "subscription_expired") {
+                    await updateUserPlanLimits(userId, "hobby", "expired", null);
+                }
+                // If status is 'active' or 'on_trial', handle upgrades, downgrades, or renewals.
+                else if (status === "active" || status === "on_trial") {
                     let planType: keyof typeof PLAN_LIMITS = "hobby";
                     if (variantId === config.lemon_squeezy_variant_id_dev) planType = "developer";
                     else if (variantId === config.lemon_squeezy_variant_id_enterprise) planType = "enterprise";
 
-                    await updateUserPlanLimits(userId, planType, status === "active" ? "active" : "cancelled", attributes.ends_at ? new Date(attributes.ends_at) : null);
-                } else {
-                    // Just update status if it's not a plan change
+                    await updateUserPlanLimits(userId, planType, "active", endsAt);
+                }
+                // If status is 'cancelled' (pending expiry at end of period).
+                else if (status === "cancelled") {
                     await UserPlan.findOneAndUpdate(
                         { user: userId },
                         {
-                            status: status === "active" ? "active" : "cancelled",
-                            planEndDate: attributes.ends_at ? new Date(attributes.ends_at) : null
+                            status: "cancelled",
+                            planEndDate: endsAt
                         }
                     );
                 }
-
-                console.log(`🔄 User ${userId} subscription updated. Status: ${status}, Plan Change: ${isPlanChange}`);
-                break;
-            }
-
-            case "subscription_expired": {
-                if (!userId) break;
-
-                // Revoke access - Reset to Hobby
-                await updateUserPlanLimits(userId, "hobby", "expired", attributes.ends_at ? new Date(attributes.ends_at) : null);
-
-                await LemonSqueezyOrder.findOneAndUpdate(
-                    { lsSubscriptionId: lsId },
-                    { status: "expired" }
-                );
-
-                console.log(`❌ Revoked access for User ID: ${userId}`);
                 break;
             }
 
             default:
-                console.log(`ℹ️ Unhandled event type: ${eventName}`);
+                console.log(` => [WEBHOOK: ${eventName}] Unhandled event type`);
         }
 
         return res.status(200).send("Webhook received successfully");
     } catch (error) {
-        console.error(" => [API ERROR: handleLemonWebhook]", error);
+        console.error(" => [WEBHOOK ERROR: handleLemonWebhook]", error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
