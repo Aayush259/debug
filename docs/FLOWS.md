@@ -47,10 +47,9 @@ The core value proposition of Krvyu is the asynchronous transformation of raw lo
 The public ingestion endpoint (`POST /api/logs/:keyId`) is designed for speed.
 
 1. **Extraction:** Receives an array of logs (structured or raw strings).
-2. **Quota / Rotation Check:** 
-    - Queries `UserPlan` for `remainingPreservedLogs`.
-    - If incoming count exceeds quota, Krvyu executes **FIFO Rotation**: it deletes the oldest `$excess` logs for that specific project from the database.
-    - If within quota, it atomically decrements the user's `remainingPreservedLogs`.
+2. **Gating & Rotation Check:** 
+    - **Active Project Gating:** The system fetches all projects belonging to the user and sorts them by creation date. Log ingestion is only permitted for the oldest **X** projects (where X is the plan's `totalProjects` limit). If the project is inactive, the request is rejected with a 403 status.
+    - **Global FIFO Rotation:** If the user's total account-wide log count reaches their `totalPreservedLogs` limit, the platform identifies and deletes the oldest logs **across all of the user's projects** to make room for new entries.
 3. **Auto-Classification:** Logs without an explicit level run through `classifyLog` to identify severity.
 4. **Database Bulk Insert:** Processed logs are batch-inserted via `insertMany`.
 5. **Dashboard Broadcast:** Emits `GET_LOGS` via Socket.IO to the user's room.

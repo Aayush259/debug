@@ -1,3 +1,19 @@
+/**
+ * @file config.ts
+ * @description Centralized configuration management for the platform.
+ * 
+ * CORE CONCEPT:
+ * The "Config" layer serves as the single source of truth for all environment-specific 
+ * variables. It handles the extraction and normalization of environment settings 
+ * (Better Auth, MongoDB, Lemon Squeezy, etc.) to ensure consistent behavior across 
+ * different deployment stages (development, staging, production).
+ * 
+ * Responsibilities:
+ * - Environment Variable Loading: Utilizes dotenv to load local .env files.
+ * - Service Orchestration: Defines credentials and endpoints for third-party integrations.
+ * - Feature Flags & Quotas: Maps environment-defined limits to application logic.
+ */
+
 import dotenv from "dotenv";
 
 dotenv.config();

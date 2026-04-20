@@ -1,22 +1,22 @@
 /**
  * @file userPlan.ts
- * @description Defines the UserPlan schema for the Krvyu SaaS platform.
+ * @description Defines the UserPlan schema for the platform.
  * 
  * CORE CONCEPT:
- * "UserPlan" manages the subscription details and resource quotas for each 
- * developer on the Krvyu platform. It tracks their current plan level, 
- * activation dates, and both total and remaining balances for project creation, 
- * AI analysis, and log preservation.
+ * "UserPlan" manages subscription details and resource quotas for each developer.
+ * It tracks plan levels, activation dates, and account-wide resource balances.
  * 
- * Plan Tiers:
- * 1. Hobby: Entry-level plan for individual developers.
- * 2. Developer: Pro-tier for growing applications.
- * 3. Enterprise: Scalable solution for large organizations.
+ * Subscription Lifecycle:
+ * - ACTIVE: User has full access to plan features.
+ * - CANCELLED: Pending expiration at the end of the current billing cycle. User 
+ *   retains premium access until the expiration date.
+ * - EXPIRED: Subscription has ended. The system automatically resets the plan 
+ *   to 'hobby', clears the end date, and revokes premium features.
  * 
- * Features:
- * - Dynamic Quota Management: Tracks both total and remaining usage of projects, AI insights, and preserved logs.
- * - Subscription Lifecycle: Manages start dates, expiry dates, and billing status for accurate service delivery.
- * - Pricing Model: Stores the current cost associated with the user's active plan.
+ * Resource Enforcement:
+ * - Active Project Gating: Restricts log ingestion to the oldest N projects.
+ * - Global Log Rotation: Rotates oldest logs account-wide to stay within quotas.
+ * - AI Insights: Tracks monthly usage vs free/BYOK quotas.
  */
 
 import mongoose, { Document, Model, Schema } from "mongoose";

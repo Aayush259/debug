@@ -55,31 +55,28 @@ Individual events or messages emitted by a developer's application and captured 
 - **Role:** These logs serve as raw input for the AI analysis engine. They include a severity level (`info`, `warn`, `error`) and the log content itself.
 
 ## 5. SecretKey (Project)
-A **SecretKey** acts as the secure bridge between an external application and Krvyu.
+A **SecretKey** acts as the secure bridge between an external application and Zag.
 
-A secure token assigned to a specific application (Project) used for authenticating log transmissions.
+Additional Project Concepts:
 - **Backend naming:** `Secret Key`
 - **Frontend naming:** `Project`
-- **Quota Management:** Project creation is subject to plan-based limits. Each user account is assigned a `UserPlan` that defines the total number of projects (`totalProjects`) allowed and tracks the `remainingProjects` balance.
-- **Crucial Notes:**
-    - **Mapping:** In the backend, a `SecretKey` document defines the "Project" via its `projectName` field. The frontend treats this document as a project entity.
-    - **Security:** Raw API keys are **never** stored in the database. Only their `bcrypt` hashes are saved.
-    - **Validation:** incoming logs are validated by comparing their provided key against the stored hash.
+- **Active Project Gating:** To prevent misuse after plan downgrades or expirations, Zag restricts log ingestion to the oldest **N** projects (where N is the limit for the user's plan). Logs sent to projects outside this "active" set are rejected with a `403 Forbidden` status.
+- **Quota Management:** Project creation is subject to plan-based limits. Each user account is assigned a `UserPlan` that defines the total number of projects (`totalProjects`) allowed.
 
 ---
 
 ## 6. Log Quota Management & Rotation
-The Krvyu platform uses a quota-based system to ensure fair resource allocation and optimal performance.
+The Zag platform uses a quota-based system to ensure fair resource allocation and optimal performance.
 
 ### A. Preserved Logs Quota
-Each user is assigned a `remainingPreservedLogs` quota (stored in `UserPlan`). This represents the total number of log entries the platform will persist for them across all their projects.
-- **Consumption:** Every successful log ingestion decrements this quota.
-- **Recovery:** When a log is deleted (individually or via project deletion), the quota slot is refunded to the user.
+Each user is assigned a `totalPreservedLogs` quota (stored in `UserPlan`). This represents the total number of log entries the platform will persist for them across all their projects.
+- **Consumption:** Every successful log ingestion decrements this global quota.
+- **Recovery:** When a log is deleted, the quota slot is refunded to the user's account-wide balance.
 
-### B. FIFO Log Rotation
-To maintain reliability without exceeding storage limits, Krvyu implements **First-In-First-Out (FIFO) Rotation**. 
-- If an application attempts to send new logs when the user's `remainingPreservedLogs` is zero or insufficient, Krvyu automatically deletes the oldest logs from that specific project to make room for the new data.
-- This ensures that developers always have access to their most recent application events.
+### B. Global Log Rotation (FIFO)
+To maintain reliability without exceeding account-wide storage limits, Zag implements **Global First-In-First-Out (FIFO) Rotation**. 
+- When a user's total log count (across all projects) reaches their `totalPreservedLogs` limit, the ingestion engine automatically identifies and deletes the **oldest logs across all projects** belonging to that user.
+- This ensures that a user's account never exceeds its storage limit, while always making room for the most recent data from their active projects.
 
 ### C. AI Insight Quota
 AI-powered analysis is governed by `remainingFreeInsights`.
