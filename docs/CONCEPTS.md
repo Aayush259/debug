@@ -55,18 +55,18 @@ Individual events or messages emitted by a developer's application and captured 
 - **Role:** These logs serve as raw input for the AI analysis engine. They include a severity level (`info`, `warn`, `error`) and the log content itself.
 
 ## 5. SecretKey (Project)
-A **SecretKey** acts as the secure bridge between an external application and Zag.
+A **SecretKey** acts as the secure bridge between an external application and Krvyu.
 
 Additional Project Concepts:
 - **Backend naming:** `Secret Key`
 - **Frontend naming:** `Project`
-- **Active Project Gating:** To prevent misuse after plan downgrades or expirations, Zag restricts log ingestion to the oldest **N** projects (where N is the limit for the user's plan). Logs sent to projects outside this "active" set are rejected with a `403 Forbidden` status.
+- **Active Project Gating:** To prevent misuse after plan downgrades or expirations, Krvyu restricts log ingestion to the oldest **N** projects (where N is the limit for the user's plan). Logs sent to projects outside this "active" set are rejected with a `403 Forbidden` status.
 - **Quota Management:** Project creation is subject to plan-based limits. Each user account is assigned a `UserPlan` that defines the total number of projects (`totalProjects`) allowed.
 
 ---
 
 ## 6. Log Quota Management & Rotation
-The Zag platform uses a quota-based system to ensure fair resource allocation and optimal performance.
+The Krvyu platform uses a quota-based system to ensure fair resource allocation and optimal performance.
 
 ### A. Preserved Logs Quota
 Each user is assigned a `totalPreservedLogs` quota (stored in `UserPlan`). This represents the total number of log entries the platform will persist for them across all their projects.
@@ -74,7 +74,7 @@ Each user is assigned a `totalPreservedLogs` quota (stored in `UserPlan`). This 
 - **Recovery:** When a log is deleted, the quota slot is refunded to the user's account-wide balance.
 
 ### B. Global Log Rotation (FIFO)
-To maintain reliability without exceeding account-wide storage limits, Zag implements **Global First-In-First-Out (FIFO) Rotation**. 
+To maintain reliability without exceeding account-wide storage limits, Krvyu implements **Global First-In-First-Out (FIFO) Rotation**. 
 - When a user's total log count (across all projects) reaches their `totalPreservedLogs` limit, the ingestion engine automatically identifies and deletes the **oldest logs across all projects** belonging to that user.
 - This ensures that a user's account never exceeds its storage limit, while always making room for the most recent data from their active projects.
 
@@ -87,7 +87,7 @@ AI-powered analysis is governed by `remainingFreeInsights`.
 - **Developer/Enterprise Plans:** Support full customization of AI providers, personal API key usage, and comprehensive cross-channel notifications. Inactive logs are retained for 7/30 days respectively.
 
 ### E. Inactivity-based Retention
-To keep the database lean and performant, Zag automatically identifies and purges logs from projects that have stopped sending data.
+To keep the database lean and performant, Krvyu automatically identifies and purges logs from projects that have stopped sending data.
 - **Hobby:** 1 day inactivity limit.
 - **Developer:** 7 days inactivity limit.
 - **Enterprise:** 30 days inactivity limit.
