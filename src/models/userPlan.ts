@@ -16,7 +16,8 @@
  * Resource Enforcement:
  * - Active Project Gating: Restricts log ingestion to the oldest N projects.
  * - Global Log Rotation: Rotates oldest logs account-wide to stay within quotas.
- * - AI Insights: Tracks monthly usage vs free/BYOK quotas.
+ * - AI Insights: Tracks usage vs quotas. Hobby plan has a fixed pool (10), while 
+ *   paid plans have monthly recurring quotas (200/2000).
  */
 
 import mongoose, { Document, Model, Schema } from "mongoose";
@@ -75,11 +76,10 @@ const userPlanSchema = new Schema<IUserPlan>({
         required: true,
         default: 1 // Default for hobby
     },
-    /** Remaining number of AI insights (from free quota) available this month. */
     remainingFreeInsights: {
         type: Number,
         required: true,
-        default: 10 // Default for hobby
+        default: 10 // Fixed pool for Hobby, Monthly for others
     },
     /** Remaining number of logs per project that will be preserved for the developer. */
     remainingPreservedLogs: {
@@ -93,7 +93,11 @@ const userPlanSchema = new Schema<IUserPlan>({
         required: true,
         default: 1 // Default for hobby
     },
-    /** Total number of AI insights the user can get per month. */
+    /** 
+     * Total number of AI insights allowed. 
+     * For Hobby: Fixed lifetime/initial pool.
+     * For Paid: Monthly recurring quota.
+     */
     totalFreeInsights: {
         type: Number,
         required: true,

@@ -83,7 +83,12 @@ AI-powered analysis is governed by `remainingFreeInsights`.
 - Users on the free tier have a limited number of "automated" insights.
 - Once this quota is exhausted, logs will still be ingested, but automated AI analysis will pause until the quota resets or the user switches to using their own API keys (where supported). For hobby plan, the quota never resets, but for other plans, it gets reset monthly.
 
-### D. Plan-Based Feature Gating
-The Krvyu platform enforces feature parity based on the user's active subscription tier.
-- **Hobby Plan:** Entry-level tier. Does not support BYOK (Bring Your Own Key) or off-platform email alerts. AI analysis is restricted to the platform's default provider and model.
-- **Developer/Enterprise Plans:** Support full customization of AI providers, personal API key usage, and comprehensive cross-channel notifications.
+- **Hobby Plan:** Entry-level tier. Does not support BYOK (Bring Your Own Key) or off-platform email alerts. AI analysis is restricted to the platform's default provider and model. Inactive logs are retained for 1 day.
+- **Developer/Enterprise Plans:** Support full customization of AI providers, personal API key usage, and comprehensive cross-channel notifications. Inactive logs are retained for 7/30 days respectively.
+
+### E. Inactivity-based Retention
+To keep the database lean and performant, Zag automatically identifies and purges logs from projects that have stopped sending data.
+- **Hobby:** 1 day inactivity limit.
+- **Developer:** 7 days inactivity limit.
+- **Enterprise:** 30 days inactivity limit.
+When a project exceeds its limit, all of its logs and AI insights are deleted, and the global quota is refunded to the user.

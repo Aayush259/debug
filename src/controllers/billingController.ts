@@ -33,7 +33,7 @@ import { LemonSqueezyOrder } from "../models/lemonSqueezyOrder";
 const PLAN_LIMITS = {
     hobby: {
         totalProjects: 1,
-        totalFreeInsights: 10,
+        totalFreeInsights: 10, // FIXED POOL (Lifetime/Initial)
         totalPreservedLogs: 200,
         byok: false,
         emailAlerts: false,
@@ -41,7 +41,7 @@ const PLAN_LIMITS = {
     },
     developer: {
         totalProjects: 10,
-        totalFreeInsights: 200,
+        totalFreeInsights: 200, // MONTHLY RECURRING
         totalPreservedLogs: 10000,
         byok: true,
         emailAlerts: true,
@@ -49,7 +49,7 @@ const PLAN_LIMITS = {
     },
     enterprise: {
         totalProjects: 1000000, // Unlimited
-        totalFreeInsights: 2000,
+        totalFreeInsights: 2000, // MONTHLY RECURRING
         totalPreservedLogs: 50000,
         byok: true,
         emailAlerts: true,
@@ -64,9 +64,17 @@ const PLAN_LIMITS = {
  * @param planType - The slug of the target plan (hobby, developer, enterprise).
  * @param status - The current subscription status from Lemon Squeezy.
  * @param endsAt - Optional expiration date for the plan.
+ * @param resetInsights - If true, refills the AI insight quota to its maximum. 
+ *                        Used for new subscriptions, monthly renewals, and plan upgrades.
  * @returns The updated UserPlan document.
  */
-async function updateUserPlanLimits(userId: string, planType: keyof typeof PLAN_LIMITS, status: "active" | "expired" | "cancelled" = "active", endsAt: Date | null = null) {
+async function updateUserPlanLimits(
+    userId: string,
+    planType: keyof typeof PLAN_LIMITS,
+    status: "active" | "expired" | "cancelled" = "active",
+    endsAt: Date | null = null,
+    resetInsights: boolean = false
+) {
     const limits = PLAN_LIMITS[planType];
     const userPlan = await UserPlan.findOne({ user: userId });
 
@@ -74,7 +82,6 @@ async function updateUserPlanLimits(userId: string, planType: keyof typeof PLAN_
 
     // Calculate current usage accurately based on old limits
     const projectsCreated = userPlan.totalProjects - userPlan.remainingProjects;
-    const insightsUsed = userPlan.totalFreeInsights - userPlan.remainingFreeInsights;
     const logsUsed = userPlan.totalPreservedLogs - userPlan.remainingPreservedLogs;
 
     // Apply new limits
@@ -82,8 +89,17 @@ async function updateUserPlanLimits(userId: string, planType: keyof typeof PLAN_
     userPlan.totalProjects = limits.totalProjects;
     userPlan.remainingProjects = Math.max(0, limits.totalProjects - projectsCreated);
 
+    // AI Insight Logic: Monthly Reset vs Fixed Pool Persistence
     userPlan.totalFreeInsights = limits.totalFreeInsights;
-    userPlan.remainingFreeInsights = Math.max(0, limits.totalFreeInsights - insightsUsed);
+
+    if (resetInsights) {
+        // Refill quota (Monthly Renewal or Plan Upgrade)
+        userPlan.remainingFreeInsights = limits.totalFreeInsights;
+    } else {
+        // Carry over usage (Status updates or Downgrades)
+        const insightsUsed = userPlan.totalFreeInsights - userPlan.remainingFreeInsights;
+        userPlan.remainingFreeInsights = Math.max(0, limits.totalFreeInsights - insightsUsed);
+    }
 
     userPlan.totalPreservedLogs = limits.totalPreservedLogs;
     userPlan.remainingPreservedLogs = Math.max(0, limits.totalPreservedLogs - logsUsed);
@@ -332,9 +348,26 @@ export const handleLemonWebhook = async (req: Request, res: Response) => {
                     { upsert: true, returnDocument: 'after' }
                 );
 
-                // Update User Plan Limits
-                await updateUserPlanLimits(userId, planType, "active", attributes.ends_at ? new Date(attributes.ends_at) : null);
+                // Update User Plan Limits (New subscription/Upgrade starts with full quota)
+                await updateUserPlanLimits(userId, planType, "active", attributes.ends_at ? new Date(attributes.ends_at) : null, true);
 
+                break;
+            }
+
+            case "subscription_payment_success": {
+                if (!userId) break;
+
+                // Resolve planType from variant_id for the current payment
+                const variantId = attributes.variant_id?.toString();
+                let planType: keyof typeof PLAN_LIMITS = "hobby";
+                if (variantId === config.lemon_squeezy_variant_id_dev) planType = "developer";
+                else if (variantId === config.lemon_squeezy_variant_id_enterprise) planType = "enterprise";
+
+                // Monthly Renewal: Reset insights to full quota for paid plans
+                if (planType !== "hobby") {
+                    console.log(` => [WEBHOOK] Subscription renewed for user ${userId}. Resetting monthly AI insights.`);
+                    await updateUserPlanLimits(userId, planType, "active", attributes.ends_at ? new Date(attributes.ends_at) : null, true);
+                }
                 break;
             }
 
@@ -369,7 +402,12 @@ export const handleLemonWebhook = async (req: Request, res: Response) => {
                     if (variantId === config.lemon_squeezy_variant_id_dev) planType = "developer";
                     else if (variantId === config.lemon_squeezy_variant_id_enterprise) planType = "enterprise";
 
-                    await updateUserPlanLimits(userId, planType, "active", endsAt);
+                    // Check if this update represents a plan change (Upgrade/Downgrade)
+                    const currentUserPlan = await UserPlan.findOne({ user: userId });
+                    const isPlanChange = currentUserPlan && currentUserPlan.planType !== planType;
+
+                    // If it's a plan change, we reset insights to give a fresh start for the new tier.
+                    await updateUserPlanLimits(userId, planType, "active", endsAt, isPlanChange === true);
                 }
                 // If status is 'cancelled' (pending expiry at end of period).
                 else if (status === "cancelled") {

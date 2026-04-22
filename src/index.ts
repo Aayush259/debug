@@ -47,6 +47,8 @@ import { setupRedisSubscriber } from "./lib/redis/redisSubscriber.js";
 import { saveProjectLogs } from "./controllers/projectLogsControllers.js";
 import { handleLemonWebhook } from "./controllers/billingController.js";
 import "./lib/workers/logWorker.js"; // Initialize background worker natively
+import "./lib/workers/retentionWorker.js"; // Initialize retention worker natively
+import { setupRetentionJob } from "./lib/queue/retentionQueue.js";
 
 const app = express();
 const server = createServer(app);
@@ -128,5 +130,6 @@ setupRedisSubscriber(io); // Attach custom AI insight Redis subscriber to Socket
 
 server.listen(config.port, async () => {
     await connectDB();
+    await setupRetentionJob(); // Schedule the daily log cleanup job
     console.log(" > Server running on port", config.port);
 });

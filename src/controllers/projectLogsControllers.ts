@@ -300,6 +300,9 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
         // Insert into database
         const savedLogs = await ProjectLogs.insertMany(processedLogs);
 
+        // Update last activity timestamp on the project (SecretKey)
+        await SecretKey.findByIdAndUpdate(keyId, { lastLogAt: new Date() });
+
         // Send logs via Socket.IO
         const io = req.app.get("io");
         if (io) {

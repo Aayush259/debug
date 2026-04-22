@@ -24,6 +24,7 @@ export interface ISecretKey extends Document {
     key: string;
     user: mongoose.Types.ObjectId;
     image?: string | null;
+    lastLogAt?: Date | null;
     createdAt: Date;
     updatedAt: Date;
     compareKey(key: string): Promise<boolean>;
@@ -50,8 +51,14 @@ const secretKeySchema = new Schema<ISecretKey>({
         type: String,
         required: false,
         default: null
+    },
+    lastLogAt: {
+        type: Date,
+        default: null,
+        required: false
     }
 }, { timestamps: true });
+
 
 /**
  * Middleware: Hashing the key before saving.

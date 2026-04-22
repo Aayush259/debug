@@ -101,3 +101,10 @@ When a Project (SecretKey) is deleted, a cascading cleanup is triggered:
 1. **Log Cleanup:** All `ProjectLogs` associated with that key are deleted.
 2. **Quota Refund:** The total count of deleted logs is calculated and added back to the user's `remainingPreservedLogs` balance.
 3. **Insight Cleanup:** All associated `LogsDebug` insights are removed.
+
+### C. Inactivity Cleanup (Scheduled Job)
+The platform runs a background maintenance job to enforce retention policies for inactive projects.
+1. **Trigger:** A BullMQ job runs daily at midnight AND once on server startup.
+2. **Activity Resolution:** For each project, the system checks `lastLogAt`. If null, it falls back to the latest log's `createdAt` or the project's own `createdAt`.
+3. **Threshold Check:** Based on the user's `UserPlan`, it calculates if the inactivity duration exceeds the plan's retention limit (1, 7, or 30 days).
+4. **Automated Purge:** If inactive, the system deletes all logs and AI insights for that project and refunds the global log quota.
