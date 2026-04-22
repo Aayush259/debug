@@ -16,6 +16,8 @@
  *    for background AI analysis.
  * 4. Data Retrieval (Internal Dashboard): Provides paginated, filtered 
  *    access to raw logs for the developer dashboard.
+ * 5. Log Management: Provides APIs for individual log deletion and bulk clearing 
+ *    of project logs, with automatic quota recovery.
  * 
  * Consumer:
  * - Public Ingestion Endpoints (for external apps).
@@ -29,6 +31,8 @@ import { EVENTS } from "../lib/utils.js";
 import { classifyLog } from "../lib/logClassifier.js";
 import { enqueueLogForAnalysis } from "../lib/queue/logQueue.js";
 import { UserPlan } from "../models/userPlan.js";
+import { LogsDebug } from "../models/logsDebugModel";
+
 
 /**
  * Retrieves all logs for a specific project.
@@ -333,3 +337,115 @@ export const saveProjectLogs = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
+
+/**
+ * Deletes all logs for a specific project.
+ * @param req - Express request object
+ * @param res - Express response object
+ * @returns JSON response confirming deletion
+ */
+export const clearProjectLogs = async (req: Request, res: Response) => {
+    try {
+        const { projectId } = req.params;
+        const user = req.user;
+
+        if (!projectId) {
+            return res.status(400).json({ status: "error", message: "Project ID is required" });
+        }
+
+        if (!user) {
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
+
+        // Verify project ownership
+        const secretKey = await SecretKey.findOne({ _id: projectId, user: user.id });
+        if (!secretKey) {
+            return res.status(404).json({ status: "error", message: "Project not found or unauthorized" });
+        }
+
+        // Count logs for quota recovery
+        const logsCount = await ProjectLogs.countDocuments({ secretKeyId: projectId, user: user.id });
+
+        if (logsCount === 0) {
+            return res.status(200).json({
+                status: "success",
+                message: "No logs found to clear for this project"
+            });
+        }
+
+        // Atomic Deletion across Logs and AI Insights
+        await ProjectLogs.deleteMany({ secretKeyId: projectId, user: user.id });
+        await LogsDebug.deleteMany({ secretKey: projectId, user: user.id });
+
+        // Quota Refund: Restore the deleted logs to the user's global quota
+        // We cap the restoration to totalPreservedLogs to prevent overflow if logic changes later
+        const userPlan = await UserPlan.findOne({ user: user.id });
+        if (userPlan) {
+            const newRemaining = Math.min(userPlan.remainingPreservedLogs + logsCount, userPlan.totalPreservedLogs);
+            await UserPlan.findOneAndUpdate(
+                { user: user.id },
+                { remainingPreservedLogs: newRemaining }
+            );
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: `Successfully cleared ${logsCount} logs and associated insights from the project.`
+        });
+    } catch (error) {
+        console.error(" => [API ERROR: clearProjectLogs]", error);
+        return res.status(500).json({ status: "error", message: "Internal server error" });
+    }
+}
+
+/**
+ * Deletes a specific log by ID.
+ * @param req - Express request object
+ * @param res - Express response object
+ * @returns JSON response confirming deletion
+ */
+export const deleteLogById = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const user = req.user;
+
+        if (!id) {
+            return res.status(400).json({ status: "error", message: "Log ID is required" });
+        }
+
+        if (!user) {
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
+        }
+
+        // Find log and verify ownership
+        const log = await ProjectLogs.findOne({ _id: id, user: user.id });
+        if (!log) {
+            return res.status(404).json({ status: "error", message: "Log entry not found or unauthorized" });
+        }
+
+        // Delete the log
+        await ProjectLogs.deleteOne({ _id: id });
+
+        // Delete associated AI insight if it exists
+        await LogsDebug.deleteOne({ projectLogId: id });
+
+        // Quota Refund: Restore 1 log to the user's global quota
+        const userPlan = await UserPlan.findOne({ user: user.id });
+        if (userPlan) {
+            const newRemaining = Math.min(userPlan.remainingPreservedLogs + 1, userPlan.totalPreservedLogs);
+            await UserPlan.findOneAndUpdate(
+                { user: user.id },
+                { remainingPreservedLogs: newRemaining }
+            );
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: "Log entry and associated insights deleted successfully."
+        });
+    } catch (error) {
+        console.error(" => [API ERROR: deleteLogById]", error);
+        return res.status(500).json({ status: "error", message: "Internal server error" });
+    }
+}
+

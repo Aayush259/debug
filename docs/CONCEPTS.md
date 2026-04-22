@@ -71,7 +71,7 @@ The Krvyu platform uses a quota-based system to ensure fair resource allocation 
 ### A. Preserved Logs Quota
 Each user is assigned a `totalPreservedLogs` quota (stored in `UserPlan`). This represents the total number of log entries the platform will persist for them across all their projects.
 - **Consumption:** Every successful log ingestion decrements this global quota.
-- **Recovery:** When a log is deleted, the quota slot is refunded to the user's account-wide balance.
+- **Recovery:** When a log is deleted (manually via API, through project clearing, project deletion, or background rotation), the quota slot is refunded to the user's account-wide balance. This ensures that developers can manage their storage effectively.
 
 ### B. Global Log Rotation (FIFO)
 To maintain reliability without exceeding account-wide storage limits, Krvyu implements **Global First-In-First-Out (FIFO) Rotation**. 

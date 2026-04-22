@@ -94,15 +94,24 @@ Once an insight is persisted, Krvyu triggers a multi-pronged notification flow, 
 To ensure quota integrity, Krvyu maintains strict sync between the database and the `UserPlan` model.
 
 ### A. Manual / Individual Deletion
-The `ProjectLogs` model includes a `post-deleteOne` middleware. When a developer deletes a single log entry via the dashboard or API, the system automatically increments `remainingPreservedLogs` by 1.
+The platform provides a dedicated API endpoint (`DELETE /api/project-logs/:id`) for removing specific log entries.
+- **Verification:** The system ensures the log entry exists and belongs to the authenticated user.
+- **Quota Refund:** Upon successful deletion, the user's `remainingPreservedLogs` balance is incremented by 1.
+- **Insight Cleanup:** Any associated AI insight (`LogsDebug`) for that specific log is also removed.
 
-### B. Project Deletion (Secret Key)
-When a Project (SecretKey) is deleted, a cascading cleanup is triggered:
+### B. Project Clearing (Bulk Log Deletion)
+Developers can clear all logs for a specific project via the `DELETE /api/project-logs/clear/:projectId` endpoint.
+- **Verification:** Authenticates project ownership (SecretKey) before execution.
+- **Bulk Cleanup:** Atomsly deletes all `ProjectLogs` and `LogsDebug` entries associated with that project and user.
+- **Quota Refund:** Calculates the total count of deleted logs and restores the full amount to the user's `remainingPreservedLogs` balance (capped at `totalPreservedLogs`).
+
+### C. Project Deletion (Secret Key)
+When a Project (SecretKey) is fully deleted from the platform, a cascading cleanup is triggered:
 1. **Log Cleanup:** All `ProjectLogs` associated with that key are deleted.
 2. **Quota Refund:** The total count of deleted logs is calculated and added back to the user's `remainingPreservedLogs` balance.
 3. **Insight Cleanup:** All associated `LogsDebug` insights are removed.
 
-### C. Inactivity Cleanup (Scheduled Job)
+### D. Inactivity Cleanup (Scheduled Job)
 The platform runs a background maintenance job to enforce retention policies for inactive projects.
 1. **Trigger:** A BullMQ job runs daily at midnight AND once on server startup.
 2. **Activity Resolution:** For each project, the system checks `lastLogAt`. If null, it falls back to the latest log's `createdAt` or the project's own `createdAt`.
