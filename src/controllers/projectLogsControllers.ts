@@ -25,13 +25,13 @@
  */
 
 import { Request, Response } from "express";
-import { ProjectLogs } from "../models/projectLogsModel";
-import { SecretKey } from "../models/secretKeyModel";
+import { ProjectLogs } from "../models/projectLogsModel.js";
+import { SecretKey } from "../models/secretKeyModel.js";
 import { EVENTS } from "../lib/utils.js";
 import { classifyLog } from "../lib/logClassifier.js";
 import { enqueueLogForAnalysis } from "../lib/queue/logQueue.js";
 import { UserPlan } from "../models/userPlan.js";
-import { LogsDebug } from "../models/logsDebugModel";
+import { LogsDebug } from "../models/logsDebugModel.js";
 
 
 /**

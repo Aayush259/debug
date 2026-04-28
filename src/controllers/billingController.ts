@@ -24,11 +24,11 @@
 
 import { Request, Response } from "express";
 import { lemonSqueezySetup, createCheckout, getSubscription } from "@lemonsqueezy/lemonsqueezy.js";
-import config from "../config/config";
+import config from "../config/config.js";
 import crypto from "node:crypto";
-import { UserPlan } from "../models/userPlan";
-import { LemonSqueezyHistory } from "../models/lemonSqueezyHistory";
-import { LemonSqueezyOrder } from "../models/lemonSqueezyOrder";
+import { UserPlan } from "../models/userPlan.js";
+import { LemonSqueezyHistory } from "../models/lemonSqueezyHistory.js";
+import { LemonSqueezyOrder } from "../models/lemonSqueezyOrder.js";
 
 const PLAN_LIMITS = {
     hobby: {

@@ -16,7 +16,7 @@
  */
 
 import { MongoClient } from "mongodb";
-import config from "../../config/config";
+import config from "../../config/config.js";
 
 /**
  * client

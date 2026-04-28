@@ -23,7 +23,7 @@
  */
 
 import { Request, Response } from "express";
-import { LogsDebug } from "../models/logsDebugModel";
+import { LogsDebug } from "../models/logsDebugModel.js";
 
 /**
  * Retrieves pending AI insights for the authenticated user with pagination.

@@ -16,16 +16,16 @@
  *    to users via email notifications.
  */
 
-import config from "../../config/config";
-import { ILogsDebug, LogsDebug } from "../../models/logsDebugModel";
-import { ProjectLogs } from "../../models/projectLogsModel";
-import { SecretKey } from "../../models/secretKeyModel";
-import { User } from "../../models/userModel";
-import { generateLogExplanation } from "../ai";
-import { mailService } from "./mailService";
+import config from "../../config/config.js";
+import { ILogsDebug, LogsDebug } from "../../models/logsDebugModel.js";
+import { ProjectLogs } from "../../models/projectLogsModel.js";
+import { SecretKey } from "../../models/secretKeyModel.js";
+import { User } from "../../models/userModel.js";
+import { generateLogExplanation } from "../ai/index.js";
+import { mailService } from "./mailService.js";
 import { decrypt } from "../encryption.js";
 import { UserSettings } from "../../models/userSettings.js";
-import { UserPlan } from "../../models/userPlan";
+import { UserPlan } from "../../models/userPlan.js";
 
 
 class LogWorkerService {
