@@ -34,6 +34,8 @@ import { Server } from "socket.io";
 import { auth } from "./lib/auth.js";
 import config from "./config/config.js";
 import { createServer } from "node:http";
+import fs from "node:fs";
+import path from "node:path";
 import { connectDB } from "./lib/database/database.js";
 import { toNodeHandler } from "better-auth/node";
 import secretKeyRoutes from "./routes/secretKeyRoutes.js";
@@ -78,7 +80,15 @@ app.use(cors({
 app.set("io", io);
 
 app.get("/", (req, res) => {
-    res.send("Hello world!");
+    try {
+        const filePath = path.join(process.cwd(), "src", "forbidden.html");
+        const html = fs.readFileSync(filePath, "utf-8");
+        const renderedHtml = html.replace(/{{FRONTEND_URL}}/g, config.frontend_url);
+        res.status(401).send(renderedHtml);
+    } catch (error) {
+        console.error("Error reading forbidden.html:", error);
+        res.status(401).send("401 Forbidden");
+    }
 });
 
 // Authentication handled by better-auth
