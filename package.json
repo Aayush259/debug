@@ -7,7 +7,10 @@
     "start": "node dist/index.js",
     "dev": "nodemon --watch src --ext ts --exec tsx src/index.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:cov": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
@@ -37,9 +40,16 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.0",
     "@types/nodemailer": "^8.0.0",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/ui": "^4.1.5",
+    "ioredis-mock": "^8.13.1",
+    "mongodb-memory-server": "^11.0.1",
     "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.5"
   }
 }

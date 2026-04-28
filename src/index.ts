@@ -49,6 +49,7 @@ import { handleLemonWebhook } from "./controllers/billingController.js";
 import "./lib/workers/logWorker.js"; // Initialize background worker natively
 import "./lib/workers/retentionWorker.js"; // Initialize retention worker natively
 import { setupRetentionJob } from "./lib/queue/retentionQueue.js";
+import { socketAuthMiddleware } from "./middleware/socketAuthMiddleware.js";
 
 const app = express();
 const server = createServer(app);
@@ -96,34 +97,7 @@ app.use("/api/billing", requireAuth, billingRoutes);    // Billing routes
 app.post("/api/logs/:keyId", saveProjectLogs);  // Save project logs (for client's project to send logs)
 
 // Socket.IO middleware for authentication
-io.use(async (socket, next) => {
-    try {
-        const webHeaders = new Headers();
-        for (const [key, value] of Object.entries(socket.request.headers)) {
-            if (value !== undefined) {
-                if (Array.isArray(value)) {
-                    value.forEach((v) => webHeaders.append(key, v));
-                } else {
-                    webHeaders.append(key, value);
-                }
-            }
-        }
-
-        const sessionPayload = await auth.api.getSession({
-            headers: webHeaders,
-        });
-
-        if (!sessionPayload) {
-            return next(new Error("Unauthorized"));
-        }
-
-        socket.data.user = sessionPayload.user;
-        socket.data.session = sessionPayload.session;
-        next();
-    } catch (error) {
-        next(new Error("Internal Server Error"));
-    }
-});
+io.use(socketAuthMiddleware);
 
 setupSocketHandlers(io);
 setupRedisSubscriber(io); // Attach custom AI insight Redis subscriber to Socket

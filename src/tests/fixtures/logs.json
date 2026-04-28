@@ -1,0 +1,30 @@
+{
+    "errors": [
+        "Error: connect ECONNREFUSED 127.0.0.1:5432\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1157:16)",
+        "ReferenceError: x is not defined\n    at /Users/dev/project/index.js:2:1\n    at Module._compile (internal/modules/cjs/loader:1101:14)",
+        "UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block...",
+        "Traceback (most recent call last):\n  File \"app.py\", line 5, in <module>\n    print(1 / 0)\nZeroDivisionError: division by zero",
+        "ValueError: invalid literal for int() with base 10: 'abc'",
+        "[2024-03-20 12:00:00] local.ERROR: Illuminate\\Database\\QueryException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' (SQL: select * from users)",
+        "PHP Fatal error:  Uncaught Error: Call to undefined function array_combine() in /var/www/html/index.php:10\nStack trace:\n#0 {main}",
+        "SQLSTATE[HY000] [2002] Connection refused",
+        "ORA-00942: table or view does not exist",
+        "PANIC: could not write to file \"pg_xlog/xlogtemp.123\": No space left on device",
+        "mysqli_sql_exception: Table 'db.users' doesn't exist in /var/www/functions.php:45"
+    ],
+    "warnings": [
+        "WARN: DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc() instead.",
+        "(node:1234) [DEP0005] DeprecationWarning: Buffer() is deprecated",
+        "WARNING:django.request:Not Found: /admin/login.php",
+        "[2024-03-20 12:05:00] local.WARNING: Application is running in debug mode. Performance might be affected.",
+        "WARN  - Config file not found. Using default settings."
+    ],
+    "info": [
+        "INFO: Server started on port 3000",
+        "GET /api/v1/users 200 15.421 ms - 452",
+        "POST /login 302 45ms",
+        "[2024-03-20 12:10:00] local.INFO: User 542 logged in successfully.",
+        "Connection to MongoDB established.",
+        "Query OK, 1 row affected (0.01 sec)"
+    ]
+}

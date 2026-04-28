@@ -52,6 +52,27 @@ npm run dev
 
 ---
 
+## 🧪 Testing
+
+The platform uses **Vitest** for unit and integration testing. The test suite is isolated from development/production data using an in-memory MongoDB server and mocked Redis.
+
+### **Running Tests**
+
+#### **1. Run all tests**
+```bash
+npm run test:run
+```
+
+#### **2. Run with coverage report**
+```bash
+npm run test:cov
+```
+
+#### **3. Interactive UI mode**
+```bash
+npm run test:ui
+```
+
 ## 🛠️ Environment Configuration
 
 Both services require specific `.env` configurations. Use `env.example` as a template.

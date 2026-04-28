@@ -24,6 +24,36 @@ import { UserPlan } from "../models/userPlan.js";
 import { UserSettings } from "../models/userSettings.js";
 
 /**
+ * onUserCreated
+ * Hook triggered after a new user is successfully persisted to the database.
+ * Responsibility: Initialize default user state (Plan, Settings).
+ */
+export const onUserCreated = async (user: { id: string }) => {
+    // Initialize UserPlan upon signup
+    await UserPlan.create({
+        user: user.id,
+        planType: "hobby",
+        planStartDate: new Date(),
+        planEndDate: null,
+        remainingProjects: 1,
+        remainingFreeInsights: 10,
+        remainingPreservedLogs: 200,
+        totalProjects: 1,
+        totalFreeInsights: 10,
+        totalPreservedLogs: 200,
+        price: 0,
+        byok: false,
+        emailAlerts: false,
+        status: "active"
+    });
+
+    // Initialize UserSettings upon signup
+    await UserSettings.create({
+        user: user.id
+    });
+};
+
+/**
  * auth
  * The primary better-auth instance for identity management.
  */
@@ -44,30 +74,7 @@ export const auth = betterAuth({
     databaseHooks: {
         user: {
             create: {
-                after: async (user) => {
-                    // Initialize UserPlan upon signup
-                    await UserPlan.create({
-                        user: user.id,
-                        planType: "hobby",
-                        planStartDate: new Date(),
-                        planEndDate: null,
-                        remainingProjects: 1,
-                        remainingFreeInsights: 10,
-                        remainingPreservedLogs: 200,
-                        totalProjects: 1,
-                        totalFreeInsights: 10,
-                        totalPreservedLogs: 200,
-                        price: 0,
-                        byok: false,
-                        emailAlerts: false,
-                        status: "active"
-                    });
-
-                    // Initialize UserSettings upon signup
-                    await UserSettings.create({
-                        user: user.id
-                    });
-                }
+                after: onUserCreated
             }
         }
     },
