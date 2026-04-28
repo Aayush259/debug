@@ -80,29 +80,28 @@ async function updateUserPlanLimits(
 
     if (!userPlan) return null;
 
-    // Calculate current usage accurately based on old limits
+    // 1. Calculate current usage BEFORE updating totals
     const projectsCreated = userPlan.totalProjects - userPlan.remainingProjects;
+    const insightsUsed = userPlan.totalFreeInsights - userPlan.remainingFreeInsights;
     const logsUsed = userPlan.totalPreservedLogs - userPlan.remainingPreservedLogs;
 
-    // Apply new limits
+    // 2. Apply new totals
     userPlan.planType = planType;
     userPlan.totalProjects = limits.totalProjects;
-    userPlan.remainingProjects = Math.max(0, limits.totalProjects - projectsCreated);
-
-    // AI Insight Logic: Monthly Reset vs Fixed Pool Persistence
     userPlan.totalFreeInsights = limits.totalFreeInsights;
+    userPlan.totalPreservedLogs = limits.totalPreservedLogs;
+
+    // 3. Apply Quotas (Subtract usage from new totals)
+    userPlan.remainingProjects = Math.max(0, limits.totalProjects - projectsCreated);
+    userPlan.remainingPreservedLogs = Math.max(0, limits.totalPreservedLogs - logsUsed);
 
     if (resetInsights) {
-        // Refill quota (Monthly Renewal or Plan Upgrade)
+        // Refill quota (Monthly Renewal)
         userPlan.remainingFreeInsights = limits.totalFreeInsights;
     } else {
-        // Carry over usage (Status updates or Downgrades)
-        const insightsUsed = userPlan.totalFreeInsights - userPlan.remainingFreeInsights;
+        // Carry over usage (Status updates, Upgrades, or Downgrades)
         userPlan.remainingFreeInsights = Math.max(0, limits.totalFreeInsights - insightsUsed);
     }
-
-    userPlan.totalPreservedLogs = limits.totalPreservedLogs;
-    userPlan.remainingPreservedLogs = Math.max(0, limits.totalPreservedLogs - logsUsed);
 
     userPlan.price = limits.price;
     userPlan.byok = limits.byok;
@@ -348,8 +347,8 @@ export const handleLemonWebhook = async (req: Request, res: Response) => {
                     { upsert: true, returnDocument: 'after' }
                 );
 
-                // Update User Plan Limits (New subscription/Upgrade starts with full quota)
-                await updateUserPlanLimits(userId, planType, "active", attributes.ends_at ? new Date(attributes.ends_at) : null, true);
+                // Update User Plan Limits (Carry over Hobby usage to the first paid plan)
+                await updateUserPlanLimits(userId, planType, "active", attributes.ends_at ? new Date(attributes.ends_at) : null, false);
 
                 break;
             }
@@ -402,12 +401,9 @@ export const handleLemonWebhook = async (req: Request, res: Response) => {
                     if (variantId === config.lemon_squeezy_variant_id_dev) planType = "developer";
                     else if (variantId === config.lemon_squeezy_variant_id_enterprise) planType = "enterprise";
 
-                    // Check if this update represents a plan change (Upgrade/Downgrade)
-                    const currentUserPlan = await UserPlan.findOne({ user: userId });
-                    const isPlanChange = currentUserPlan && currentUserPlan.planType !== planType;
-
-                    // If it's a plan change, we reset insights to give a fresh start for the new tier.
-                    await updateUserPlanLimits(userId, planType, "active", endsAt, isPlanChange === true);
+                    // Update User Plan (Our source of feature/access truth)
+                    // Upgrades/Downgrades carry over usage; Renewals handle themselves in payment_success.
+                    await updateUserPlanLimits(userId, planType, "active", endsAt, false);
                 }
                 // If status is 'cancelled' (pending expiry at end of period).
                 else if (status === "cancelled") {

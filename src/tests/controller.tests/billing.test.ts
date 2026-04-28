@@ -217,5 +217,51 @@ describe("Billing Controller (Integration)", () => {
             expect(response.status).toBe(400);
             expect(response.body.message).toBe("Missing signature header");
         });
+
+        it("should process 'subscription_payment_success' and reset monthly AI insights", async () => {
+            // 1. Setup user on Developer plan with some usage
+            await UserPlan.findOneAndUpdate(
+                { user: testUser._id },
+                {
+                    planType: "developer",
+                    totalFreeInsights: 200,
+                    remainingFreeInsights: 50, // 150 USED
+                    status: "active"
+                }
+            );
+
+            const payload = {
+                meta: {
+                    event_name: "subscription_payment_success",
+                    custom_data: {
+                        user_id: testUser._id.toString()
+                    }
+                },
+                data: {
+                    id: "ls_sub_999",
+                    attributes: {
+                        status: "active",
+                        variant_id: config.lemon_squeezy_variant_id_dev,
+                        ends_at: new Date(Date.now() + 30 * 86400000).toISOString()
+                    }
+                }
+            };
+
+            const rawPayload = JSON.stringify(payload);
+            const signature = generateSignature(rawPayload);
+
+            const response = await request(app)
+                .post("/webhooks/lemonsqueezy")
+                .set("x-signature", signature)
+                .set("Content-Type", "application/json")
+                .send(rawPayload);
+
+            expect(response.status).toBe(200);
+
+            const updatedPlan = await UserPlan.findOne({ user: testUser._id });
+            expect(updatedPlan?.planType).toBe("developer");
+            // RENEWAL should reset to 200 regardless of previous usage
+            expect(updatedPlan?.remainingFreeInsights).toBe(200);
+        });
     });
 });
